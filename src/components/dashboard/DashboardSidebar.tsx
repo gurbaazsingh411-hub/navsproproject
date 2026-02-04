@@ -32,7 +32,6 @@ const mainNavItems = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
   { title: "Assessments", url: "/assessment", icon: BookOpen },
   { title: "Goals", url: "/goals", icon: Target },
-  { title: "Messages", url: "/messages", icon: MessageSquare },
   { title: "Reports", url: "/report", icon: BarChart3 },
 ];
 

@@ -108,7 +108,7 @@ export const Footer = () => {
           className="pt-8 border-t border-primary-foreground/10 flex flex-col md:flex-row justify-between items-center gap-6"
         >
           <p className="text-primary-foreground/40 text-sm">
-            © 2024 NAVSPRO. All rights reserved.
+            © 2026 NAVSPRO. All rights reserved.
           </p>
 
           <div className="flex gap-4">
