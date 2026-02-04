@@ -16,6 +16,8 @@ import { AuthProvider } from "@/context/AuthContext";
 
 const queryClient = new QueryClient();
 
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
@@ -28,9 +30,13 @@ const App = () => (
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/assessment" element={<Assessment />} />
-            <Route path="/report" element={<Report />} />
+
+            <Route element={<ProtectedRoute />}>
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/assessment" element={<Assessment />} />
+              <Route path="/report" element={<Report />} />
+            </Route>
+
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
