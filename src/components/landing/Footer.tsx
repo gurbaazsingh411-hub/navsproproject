@@ -29,7 +29,7 @@ export const Footer = () => {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-12 mb-12">
           {/* Brand */}
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={isInView ? { opacity: 1, y: 0 } : {}}
             transition={{ duration: 0.6 }}
@@ -48,7 +48,7 @@ export const Footer = () => {
               unique potential and navigate toward their ideal career path.
             </p>
             <div className="space-y-3 text-primary-foreground/50 text-sm">
-              <motion.a 
+              <motion.a
                 href="mailto:hello@navspro.com"
                 className="flex items-center gap-3 hover:text-secondary transition-colors group"
                 whileHover={{ x: 4 }}
@@ -59,18 +59,18 @@ export const Footer = () => {
               </motion.a>
               <div className="flex items-center gap-3">
                 <Phone className="w-4 h-4" />
-                <span>+1 (555) 123-4567</span>
+                <span>+91 91704 20687</span>
               </div>
               <div className="flex items-center gap-3">
                 <MapPin className="w-4 h-4" />
-                <span>San Francisco, CA</span>
+                <span>Delhi, India</span>
               </div>
             </div>
           </motion.div>
 
           {/* Links */}
           {Object.entries(footerLinks).map(([category, links], categoryIndex) => (
-            <motion.div 
+            <motion.div
               key={category}
               initial={{ opacity: 0, y: 20 }}
               animate={isInView ? { opacity: 1, y: 0 } : {}}
@@ -81,7 +81,7 @@ export const Footer = () => {
               </h4>
               <ul className="space-y-3">
                 {links.map((link, linkIndex) => (
-                  <motion.li 
+                  <motion.li
                     key={link}
                     initial={{ opacity: 0, x: -10 }}
                     animate={isInView ? { opacity: 1, x: 0 } : {}}
@@ -102,7 +102,7 @@ export const Footer = () => {
         </div>
 
         {/* Bottom */}
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={isInView ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 0.6, delay: 0.6 }}
@@ -111,7 +111,7 @@ export const Footer = () => {
           <p className="text-primary-foreground/40 text-sm">
             © 2024 NAVSPRO. All rights reserved.
           </p>
-          
+
           <div className="flex gap-4">
             {socialLinks.map((social, i) => (
               <motion.a
