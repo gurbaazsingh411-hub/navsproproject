@@ -69,3 +69,85 @@ export const sampleReportData: ReportData = {
     "Research & Development",
   ],
 };
+import { AssessmentResults, DimensionScore } from "@/lib/scoringUtils";
+
+export const CAREER_MAPPINGS: Record<string, string[]> = {
+  "Realistic (Hands-on)": ["Engineering", "Architecture", "Construction Management", "Forestry", "Piloting"],
+  "Investigative (Research)": ["Data Science", "Medicine", "Research Science", "Psychology", "Software Development"],
+  "Artistic (Creative)": ["Graphic Design", "Writing/Journalism", "Fine Arts", "Music/Performance", "Marketing"],
+  "Social (Helping)": ["Teaching", "Counseling", "Nursing", "Social Work", "Human Resources"],
+  "Enterprising (Leadership)": ["Business Management", "Sales/Marketing", "Law", "Politics", "Entrepreneurship"],
+  "Conventional (Organized)": ["Accounting", "Data Analysis", "Office Management", "Library Science", "Logistics"]
+};
+
+const getTraitDescription = (trait: string, band: string): string => {
+  const descriptions: Record<string, string> = {
+    "Extroversion": band === "high" ? "You thrive in social settings and enjoy collaboration." : "You prefer thoughtful, independent work environments.",
+    "Adaptability": band === "high" ? "You handle change easily and stay flexible." : "You prefer structured and predictable routines.",
+    "Emotional Stability": band === "high" ? "You stay calm and composed under pressure." : "You feel things deeply and are sensitive to stress.",
+    "Risk Taking": band === "high" ? "You are comfortable with uncertainty and bold choices." : "You prefer calculated and safe decisions.",
+    "Independence": band === "high" ? "You excel when working autonomously." : "You value guidance and team support.",
+    "Conscientiousness": band === "high" ? "You are highly organized and detail-oriented." : "You prefer a flexible and spontaneous approach."
+  };
+  return descriptions[trait] || "Trait description pending.";
+};
+
+const getAptitudeInsight = (area: string, band: string): string => {
+  if (band === "high") return `High aptitude in ${area}, indicating a natural strength.`;
+  if (band === "moderate") return `Moderate ability in ${area}, can be improved with practice.`;
+  return `Developing area in ${area}, may require extra focus.`;
+};
+
+
+export const transformResultsToReportData = (results: AssessmentResults, studentName: string): ReportData => {
+  const personalityTraits = results.personalitySummary.map(p => ({
+    trait: p.name,
+    score: Math.round(p.percentage),
+    description: getTraitDescription(p.name, p.band)
+  }));
+
+  const aptitudeAreas = results.sections.find(s => s.sectionId === 'aptitude')?.dimensions.map(d => ({
+    area: d.name,
+    score: Math.round(d.percentage),
+    level: d.band === 'high' ? 'strength' as const : d.band === 'moderate' ? 'developing' as const : 'growth' as const,
+    insight: getAptitudeInsight(d.name, d.band)
+  })) || [];
+
+  const interestAreas = results.topInterests.map(i => ({
+    name: i.name,
+    score: Math.round(i.percentage),
+    careers: CAREER_MAPPINGS[i.name] || []
+  }));
+
+  // Simple readiness score average of study + motivation
+  const readinessScore = Math.round((results.studyStyleScore.percentage + results.motivationScore.percentage) / 2);
+
+  const topStrengths = [
+    ...results.strongAptitudes.map(a => `${a.name} proficiency`),
+    results.studyStyleScore.band === 'high' ? "Consistent Study Habits" : null,
+    results.motivationScore.band === 'high' ? "High Motivation" : null
+  ].filter(Boolean) as string[];
+
+  // Fill if empty
+  if (topStrengths.length === 0) topStrengths.push("Developing Capabilities");
+
+  const growthAreas = [
+    results.studyStyleScore.band === 'low' ? "Study Discipline" : null,
+    results.motivationScore.band === 'low' ? "Motivation Consistency" : null,
+    ...results.sections.find(s => s.sectionId === 'aptitude')?.dimensions.filter(d => d.band === 'low').map(d => d.name) || []
+  ].filter(Boolean) as string[];
+
+  const recommendedPaths = results.topInterests.flatMap(i => CAREER_MAPPINGS[i.name]?.slice(0, 2) || []);
+
+  return {
+    studentName,
+    assessmentDate: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
+    personalityTraits,
+    aptitudeAreas,
+    interestAreas,
+    readinessScore,
+    topStrengths: topStrengths.slice(0, 5),
+    growthAreas: growthAreas.slice(0, 3),
+    recommendedPaths: [...new Set(recommendedPaths)].slice(0, 4)
+  };
+};

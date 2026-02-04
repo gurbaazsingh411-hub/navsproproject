@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Download, Share2, Calendar, Loader2 } from "lucide-react";
@@ -12,12 +12,56 @@ import { sampleReportData } from "@/data/reportData";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import { toast } from "sonner";
+import { useAuth } from "@/context/AuthContext";
+import { supabase } from "@/lib/supabase";
+import { calculateAssessmentResults } from "@/lib/scoringUtils";
+import { ReportData, transformResultsToReportData } from "@/data/reportData";
 
 const Report = () => {
   const navigate = useNavigate();
-  const data = sampleReportData;
+  const { user } = useAuth(); // Assuming useAuth is available here based on other files
+  const [reportData, setReportData] = useState<ReportData | null>(null);
   const reportRef = useRef<HTMLDivElement>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchAssessmentData = async () => {
+      if (!user) return;
+      try {
+        const { data, error } = await supabase
+          .from("assessments")
+          .select("answers")
+          .eq("user_id", user.id)
+          .single();
+
+        if (error) throw error;
+        if (data && data.answers) {
+          const results = calculateAssessmentResults(data.answers);
+          // Use user metadata name or fallback
+          const studentName = user.user_metadata?.full_name || "Student";
+          const transformed = transformResultsToReportData(results, studentName);
+          setReportData(transformed);
+        }
+      } catch (err) {
+        console.error("Error loading report:", err);
+        toast.error("Failed to load assessment results.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (user) fetchAssessmentData();
+    else if (!user) {
+      // If accessing directly without auth, maybe redirect? 
+      // For now, let's just let it load or show empty state.
+      setIsLoading(false);
+    }
+  }, [user]);
+
+  // Use reportData if available, otherwise fallback to sample ONLY if hardcoded (but here we want real)
+  // Or show loading.
+  const data = reportData || sampleReportData; // Fallback to sample for dev/preview if no data found
 
   const handleDownloadPDF = async () => {
     if (!reportRef.current) return;
