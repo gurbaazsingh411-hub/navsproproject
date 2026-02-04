@@ -3,7 +3,7 @@ import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
 import { WelcomeBanner } from "@/components/dashboard/WelcomeBanner";
 import { ProgressSnapshot } from "@/components/dashboard/ProgressSnapshot";
 import { TodaysFocus } from "@/components/dashboard/TodaysFocus";
-import { MentorMessages } from "@/components/dashboard/MentorMessages";
+
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/lib/supabase";
 import { useEffect, useState } from "react";
@@ -62,7 +62,7 @@ const Dashboard = () => {
 
             <div className="grid lg:grid-cols-2 gap-6">
               <TodaysFocus />
-              <MentorMessages />
+              {/* Messages section removed */}
             </div>
           </div>
         </main>

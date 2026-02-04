@@ -1,9 +1,9 @@
-import { 
-  LayoutDashboard, 
-  BookOpen, 
-  Target, 
-  MessageSquare, 
-  BarChart3, 
+import {
+  LayoutDashboard,
+  BookOpen,
+  Target,
+  MessageSquare,
+  BarChart3,
   Settings,
   User,
   LogOut
@@ -25,6 +25,8 @@ import {
 } from "@/components/ui/sidebar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/context/AuthContext";
+
 
 const mainNavItems = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
@@ -41,7 +43,12 @@ const settingsItems = [
 
 export function DashboardSidebar() {
   const { state } = useSidebar();
+  const { user, signOut } = useAuth();
   const isCollapsed = state === "collapsed";
+
+  // Basic display name derivation
+  const displayName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || "User";
+  const initials = displayName.substring(0, 2).toUpperCase();
 
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border">
@@ -69,8 +76,8 @@ export function DashboardSidebar() {
               {mainNavItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild tooltip={item.title}>
-                    <NavLink 
-                      to={item.url} 
+                    <NavLink
+                      to={item.url}
                       className="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors hover:bg-sidebar-accent"
                       activeClassName="bg-sidebar-accent text-sidebar-primary font-medium"
                     >
@@ -93,8 +100,8 @@ export function DashboardSidebar() {
               {settingsItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild tooltip={item.title}>
-                    <NavLink 
-                      to={item.url} 
+                    <NavLink
+                      to={item.url}
                       className="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors hover:bg-sidebar-accent"
                       activeClassName="bg-sidebar-accent text-sidebar-primary font-medium"
                     >
@@ -114,17 +121,17 @@ export function DashboardSidebar() {
           <Avatar className="h-9 w-9 shrink-0">
             <AvatarImage src="" />
             <AvatarFallback className="bg-secondary text-secondary-foreground text-sm">
-              AJ
+              {initials}
             </AvatarFallback>
           </Avatar>
           {!isCollapsed && (
             <div className="flex-1 overflow-hidden">
-              <p className="text-sm font-medium text-foreground truncate">Alex Johnson</p>
-              <p className="text-xs text-muted-foreground truncate">Grade 11</p>
+              <p className="text-sm font-medium text-foreground truncate">{displayName}</p>
+              <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
             </div>
           )}
           {!isCollapsed && (
-            <Button variant="ghost" size="icon" className="shrink-0 h-8 w-8">
+            <Button variant="ghost" size="icon" className="shrink-0 h-8 w-8" onClick={() => signOut()}>
               <LogOut className="h-4 w-4" />
             </Button>
           )}

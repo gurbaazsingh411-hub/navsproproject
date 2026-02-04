@@ -7,6 +7,7 @@ import Index from "./pages/Index";
 import Assessment from "./pages/Assessment";
 import Report from "./pages/Report";
 import Dashboard from "./pages/Dashboard";
+import Profile from "./pages/Profile";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import ForgotPassword from "./pages/ForgotPassword";
@@ -35,6 +36,7 @@ const App = () => (
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/assessment" element={<Assessment />} />
               <Route path="/report" element={<Report />} />
+              <Route path="/profile" element={<Profile />} />
             </Route>
 
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
