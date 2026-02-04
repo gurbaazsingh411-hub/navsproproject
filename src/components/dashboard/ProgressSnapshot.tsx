@@ -1,42 +1,50 @@
 import { motion } from "framer-motion";
 import { TrendingUp, Award, Clock, CheckCircle2 } from "lucide-react";
 
-const stats = [
-  {
-    label: "Overall Progress",
-    value: "76%",
-    change: "+8%",
-    trend: "up",
-    icon: TrendingUp,
-    color: "bg-primary/10 text-primary",
-  },
-  {
-    label: "Assessments Done",
-    value: "12/15",
-    change: "3 left",
-    trend: "neutral",
-    icon: CheckCircle2,
-    color: "bg-secondary/10 text-secondary",
-  },
-  {
-    label: "Study Hours",
-    value: "24h",
-    change: "This week",
-    trend: "up",
-    icon: Clock,
-    color: "bg-accent/10 text-accent",
-  },
-  {
-    label: "Achievements",
-    value: "8",
-    change: "+2 new",
-    trend: "up",
-    icon: Award,
-    color: "bg-success/10 text-success",
-  },
-];
+interface ProgressSnapshotProps {
+  progressPercentage: number;
+}
 
-export function ProgressSnapshot() {
+export function ProgressSnapshot({ progressPercentage }: ProgressSnapshotProps) {
+  // Convert 100% based progress to 90 questions count
+  const completedCount = Math.round((progressPercentage / 100) * 90);
+  const remaining = 90 - completedCount;
+
+  const stats = [
+    {
+      label: "Overall Progress",
+      value: `${Math.round(progressPercentage)}%`,
+      change: progressPercentage > 0 ? "In Progress" : "Not Started",
+      trend: progressPercentage > 0 ? "up" : "neutral",
+      icon: TrendingUp,
+      color: "bg-primary/10 text-primary",
+    },
+    {
+      label: "Assessments Done",
+      value: `${completedCount}/90`,
+      change: `${remaining} left`,
+      trend: "neutral",
+      icon: CheckCircle2,
+      color: "bg-secondary/10 text-secondary",
+    },
+    {
+      label: "Study Hours",
+      value: "0h",
+      change: "Tracking unavailable",
+      trend: "neutral",
+      icon: Clock,
+      color: "bg-accent/10 text-accent",
+    },
+    {
+      label: "Achievements",
+      value: "0",
+      change: "Coming soon",
+      trend: "neutral",
+      icon: Award,
+      color: "bg-success/10 text-success",
+    },
+  ];
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -49,7 +57,6 @@ export function ProgressSnapshot() {
           <h2 className="text-lg font-semibold text-foreground">Progress Snapshot</h2>
           <p className="text-sm text-muted-foreground">Your journey at a glance</p>
         </div>
-        <button className="text-sm text-primary hover:underline">View details</button>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -77,18 +84,18 @@ export function ProgressSnapshot() {
       <div className="mt-6">
         <div className="flex items-center justify-between mb-2">
           <span className="text-sm font-medium text-foreground">Career Readiness</span>
-          <span className="text-sm font-semibold text-primary">76%</span>
+          <span className="text-sm font-semibold text-primary">{Math.round(progressPercentage)}%</span>
         </div>
         <div className="h-3 bg-muted rounded-full overflow-hidden">
           <motion.div
             initial={{ width: 0 }}
-            animate={{ width: "76%" }}
+            animate={{ width: `${progressPercentage}%` }}
             transition={{ duration: 1, delay: 0.5, ease: "easeOut" }}
             className="h-full bg-gradient-to-r from-primary to-secondary rounded-full"
           />
         </div>
         <p className="text-xs text-muted-foreground mt-2">
-          Complete 3 more assessments to reach your goal
+          {remaining > 0 ? `Complete ${remaining} more questions to finish.` : "Assessment Complete!"}
         </p>
       </div>
     </motion.div>

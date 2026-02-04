@@ -43,9 +43,8 @@ export const Footer = () => {
                 NAVSPRO
               </span>
             </div>
-            <p className="text-primary-foreground/50 mb-6 max-w-sm leading-relaxed">
-              Empowering students with science-backed guidance to discover their
-              unique potential and navigate toward their ideal career path.
+            <p className="text-primary-foreground/50 mb-6 max-w-sm leading-relaxed italic">
+              "Catch them early, nurture them wisely, and let them blossom into the leaders of tomorrow."
             </p>
             <div className="space-y-3 text-primary-foreground/50 text-sm">
               <motion.a

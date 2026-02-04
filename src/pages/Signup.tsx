@@ -18,6 +18,7 @@ const Signup = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [verificationSent, setVerificationSent] = useState(false);
 
   const passwordRequirements = [
     { label: "At least 8 characters", met: password.length >= 8 },
@@ -53,14 +54,46 @@ const Signup = () => {
 
       if (error) throw error;
 
-      toast.success("Account created successfully!");
-      navigate("/dashboard");
+      toast.success("Account created! Please check your email.");
+      setVerificationSent(true);
     } catch (error: any) {
       toast.error(error.message || "Failed to create account");
     } finally {
       setLoading(false);
     }
   };
+
+  if (verificationSent) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background p-4">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="max-w-md w-full"
+        >
+          <Card className="border-0 shadow-medium">
+            <CardHeader className="text-center pb-2">
+              <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+                <Mail className="w-8 h-8 text-primary" />
+              </div>
+              <CardTitle className="text-2xl font-bold">Check your email</CardTitle>
+              <CardDescription className="text-base mt-2">
+                We've sent a verification link to <span className="font-medium text-foreground">{email}</span>
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6 pt-4">
+              <p className="text-sm text-center text-muted-foreground">
+                Click the link in the email to verify your account and access your dashboard.
+              </p>
+              <Button variant="outline" className="w-full" onClick={() => navigate("/login")}>
+                Return to Sign In
+              </Button>
+            </CardContent>
+          </Card>
+        </motion.div>
+      </div>
+    );
+  }
 
 
   return (
