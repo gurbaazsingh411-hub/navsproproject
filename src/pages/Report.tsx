@@ -33,7 +33,7 @@ const Report = () => {
           .from("assessments")
           .select("answers")
           .eq("user_id", user.id)
-          .single();
+          .maybeSingle();
 
         if (error) throw error;
         if (data && data.answers) {
