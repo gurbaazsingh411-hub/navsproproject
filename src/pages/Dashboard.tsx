@@ -1,0 +1,40 @@
+import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
+import { WelcomeBanner } from "@/components/dashboard/WelcomeBanner";
+import { ProgressSnapshot } from "@/components/dashboard/ProgressSnapshot";
+import { TodaysFocus } from "@/components/dashboard/TodaysFocus";
+import { MentorMessages } from "@/components/dashboard/MentorMessages";
+
+const Dashboard = () => {
+  return (
+    <SidebarProvider>
+      <div className="min-h-screen flex w-full bg-background">
+        <DashboardSidebar />
+        
+        <main className="flex-1 overflow-auto">
+          {/* Header with trigger */}
+          <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b border-border px-4 py-3 flex items-center gap-4">
+            <SidebarTrigger className="shrink-0" />
+            <div className="flex-1">
+              <h1 className="text-lg font-semibold text-foreground">Dashboard</h1>
+            </div>
+          </header>
+
+          {/* Dashboard content */}
+          <div className="p-4 md:p-6 lg:p-8 space-y-6">
+            <WelcomeBanner />
+            
+            <ProgressSnapshot />
+            
+            <div className="grid lg:grid-cols-2 gap-6">
+              <TodaysFocus />
+              <MentorMessages />
+            </div>
+          </div>
+        </main>
+      </div>
+    </SidebarProvider>
+  );
+};
+
+export default Dashboard;
