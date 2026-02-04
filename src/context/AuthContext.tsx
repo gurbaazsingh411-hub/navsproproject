@@ -21,7 +21,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         supabase.auth.getSession().then(({ data: { session } }) => {
             setSession(session);
             setUser(session?.user ?? null);
-            setLoading(false);
+            // Only set loading to false if we don't have a hash that indicates an oauth redirect
+            // This prevents the app from rendering before the session is established from the URL
+            if (!window.location.hash.includes('access_token')) {
+                setLoading(false);
+            }
         });
 
         // Listen for changes
