@@ -3,7 +3,7 @@ import { useRef } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { FloatingNodes } from "./FloatingNodes";
-import { ArrowRight, GraduationCap, Play } from "lucide-react";
+import { ArrowRight, GraduationCap } from "lucide-react";
 
 const stats = [
   { value: "10,000+", label: "Students Guided" },
@@ -23,18 +23,18 @@ export const HeroSection = () => {
   const scale = useTransform(scrollYProgress, [0, 0.5], [1, 0.95]);
 
   return (
-    <section 
+    <section
       ref={containerRef}
       className="relative min-h-screen flex items-center justify-center overflow-hidden bg-[linear-gradient(180deg,hsl(243_47%_10%)_0%,hsl(243_47%_16%)_40%,hsl(220_35%_20%)_100%)]"
     >
       {/* Noise texture overlay */}
       <div className="absolute inset-0 opacity-[0.03] bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iMzAwIj48ZmlsdGVyIGlkPSJhIiB4PSIwIiB5PSIwIj48ZmVUdXJidWxlbmNlIGJhc2VGcmVxdWVuY3k9Ii43NSIgc3RpdGNoVGlsZXM9InN0aXRjaCIgdHlwZT0iZnJhY3RhbE5vaXNlIi8+PGZlQ29sb3JNYXRyaXggdHlwZT0ic2F0dXJhdGUiIHZhbHVlcz0iMCIvPjwvZmlsdGVyPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbHRlcj0idXJsKCNhKSIvPjwvc3ZnPg==')]" />
-      
+
       {/* Floating nodes background */}
       <FloatingNodes />
-      
+
       {/* Content */}
-      <motion.div 
+      <motion.div
         style={{ y, opacity, scale }}
         className="relative z-10 container mx-auto px-4 sm:px-6 lg:px-8 py-20 text-center"
       >
@@ -58,7 +58,7 @@ export const HeroSection = () => {
           Every student is{" "}
           <span className="relative">
             <span className="text-gradient-secondary">unique</span>
-            <motion.span 
+            <motion.span
               className="absolute -bottom-2 left-0 right-0 h-1 bg-gradient-to-r from-secondary to-accent rounded-full"
               initial={{ scaleX: 0 }}
               animate={{ scaleX: 1 }}
@@ -92,7 +92,7 @@ export const HeroSection = () => {
                 Start Assessment
                 <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
               </span>
-              <motion.div 
+              <motion.div
                 className="absolute inset-0 bg-gradient-to-r from-accent to-orange-400"
                 initial={{ x: "100%" }}
                 whileHover={{ x: 0 }}
@@ -100,10 +100,7 @@ export const HeroSection = () => {
               />
             </Button>
           </Link>
-          <Button variant="heroOutline" size="xl" className="group">
-            <Play className="w-4 h-4 mr-2 group-hover:scale-110 transition-transform" />
-            Watch Demo
-          </Button>
+
         </motion.div>
 
         {/* Stats */}
@@ -115,14 +112,14 @@ export const HeroSection = () => {
         >
           <div className="flex flex-wrap justify-center gap-12 md:gap-20">
             {stats.map((stat, i) => (
-              <motion.div 
+              <motion.div
                 key={stat.label}
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 1.4 + i * 0.1 }}
                 className="text-center"
               >
-                <motion.p 
+                <motion.p
                   className="text-3xl md:text-4xl font-bold text-primary-foreground mb-1"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
