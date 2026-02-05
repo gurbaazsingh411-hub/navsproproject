@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { CheckCircle2, XCircle, Loader2, ArrowRight } from "lucide-react";
@@ -23,12 +23,24 @@ const VerifyEmail = () => {
             }
 
             try {
-                const { error } = await supabase.auth.verifyOtp({
+                console.log("Verifying token:", token_hash, "type:", type);
+
+                const { error, data } = await supabase.auth.verifyOtp({
                     token_hash,
                     type: type as any,
                 });
 
+                console.log("Verify result:", { error, data });
+
                 if (error) throw error;
+
+                // Check if session was actually created
+                const { data: { session } } = await supabase.auth.getSession();
+                console.log("Session after verification:", session);
+
+                if (!session) {
+                    console.warn("No session found after successful verification");
+                }
 
                 setStatus("success");
                 setMessage("Your email has been verified successfully. Redirecting...");
