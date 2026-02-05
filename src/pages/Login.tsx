@@ -41,7 +41,13 @@ const Login = () => {
       toast.success("Welcome back!");
       navigate("/dashboard");
     } catch (error: any) {
-      toast.error(error.message || "Failed to sign in");
+      if (error.message.includes("Email not confirmed")) {
+        toast.error("Please verify your email first.");
+      } else if (error.message.includes("Invalid login")) {
+        toast.error("Invalid email or password.");
+      } else {
+        toast.error(error.message || "Failed to sign in");
+      }
     } finally {
       setLoading(false);
     }
