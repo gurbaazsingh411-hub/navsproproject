@@ -13,6 +13,7 @@ const VerifyEmail = () => {
 
     const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
     const [message, setMessage] = useState("Verifying your email...");
+    const verifiedRef = useRef(false);
 
     useEffect(() => {
         const verifyEmail = async () => {
@@ -21,6 +22,13 @@ const VerifyEmail = () => {
                 setMessage("Invalid verification link.");
                 return;
             }
+
+            // Strict Mode Protection: Ensure we only run this once
+            if (verifiedRef.current) {
+                console.log("Verification already in progress or completed, skipping.");
+                return;
+            }
+            verifiedRef.current = true;
 
             try {
                 console.log("Verifying token:", token_hash, "type:", type);
@@ -32,29 +40,56 @@ const VerifyEmail = () => {
 
                 console.log("Verify result:", { error, data });
 
-                if (error) throw error;
+                if (error) {
+                    // Specific handling for "Email already confirmed"
+                    if (error.message.includes("Email link is invalid or has expired") || error.message.includes("already confirmed")) {
+                        console.warn("Got error but checking if user is actually verified...");
+                    } else {
+                        throw error;
+                    }
+                }
 
-                // Check if session was actually created
+                // Allow a moment for session to propagate
+                await new Promise(resolve => setTimeout(resolve, 500));
+
+                // Check if session was actually created or exists
                 const { data: { session } } = await supabase.auth.getSession();
                 console.log("Session after verification:", session);
 
-                if (!session) {
-                    console.warn("No session found after successful verification");
+                if (session) {
+                    setStatus("success");
+                    setMessage("Your email has been verified successfully. Redirecting...");
+                    toast.success("Email verified!");
+
+                    setTimeout(() => {
+                        window.location.href = "/dashboard";
+                    }, 1500);
+                } else {
+                    // Try refreshing session one more time
+                    const { data: { user } } = await supabase.auth.getUser();
+                    if (user && user.email_confirmed_at) {
+                        setStatus("success");
+                        setMessage("Verified! Please log in.");
+                        setTimeout(() => { window.location.href = "/login?verified=true"; }, 2000);
+                    } else {
+                        if (error) throw error;
+                        throw new Error("Verification succeeded but no session established. Please try logging in manually.");
+                    }
                 }
-
-                setStatus("success");
-                setMessage("Your email has been verified successfully. Redirecting...");
-                toast.success("Email verified!");
-
-                // Auto redirect to dashboard after 2 seconds
-                setTimeout(() => {
-                    // Force a hard reload if needed, or just navigate
-                    // Using window.location to ensure fresh state
-                    window.location.href = "/dashboard";
-                }, 2000);
 
             } catch (error: any) {
                 console.error("Verification error:", error);
+
+                // Final fallback check: if session exists, we are good.
+                const { data: { session } } = await supabase.auth.getSession();
+                if (session) {
+                    console.log("Error caught but session exists. Treating as success.");
+                    setStatus("success");
+                    setMessage("Redirecting...");
+                    window.location.href = "/dashboard";
+                    return;
+                }
+
                 setStatus("error");
                 setMessage(error.message || "Failed to verify email.");
                 toast.error("Verification failed");
@@ -88,7 +123,6 @@ const VerifyEmail = () => {
 
                 {status === "success" && (
                     <>
-                        {/* Success Icon */}
                         <motion.div
                             initial={{ scale: 0 }}
                             animate={{ scale: 1 }}
@@ -98,7 +132,6 @@ const VerifyEmail = () => {
                             <CheckCircle2 className="w-10 h-10 text-green-600" />
                         </motion.div>
 
-                        {/* Title */}
                         <motion.h1
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
@@ -107,7 +140,6 @@ const VerifyEmail = () => {
                             Email Verified!
                         </motion.h1>
 
-                        {/* Description */}
                         <motion.p
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
@@ -116,7 +148,6 @@ const VerifyEmail = () => {
                             Your account is now active. You can close this page and log in to NAVSPRO to start your career discovery journey.
                         </motion.p>
 
-                        {/* CTA Button */}
                         <motion.div
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
@@ -153,7 +184,6 @@ const VerifyEmail = () => {
                     </>
                 )}
 
-                {/* Footer note */}
                 <motion.p
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}

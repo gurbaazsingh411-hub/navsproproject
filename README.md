@@ -1,73 +1,84 @@
-# Welcome to your Lovable project
+# NAVSPRO - AI-Powered Career Navigator
 
-## Project info
+NAVSPRO is a modern career discovery platform helping students and professionals find their ideal career path through AI-driven assessments and personalized roadmaps.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+![NAVSPRO Screenshot](https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d)
 
-## How can I edit this code?
+## 🚀 Key Features
 
-There are several ways of editing your application.
+- **AI Career Assessment**: Comprehensive questionnaire to evaluate skills, interests, and personality.
+- **Personalized Dashboard**: Visual progress tracking and roadmap visualization.
+- **Smart Authentication**: Secure login/signup with Supabase, including email verification.
+- **Dynamic Profiles**: User profile management with editable details.
+- **Detailed Reports**: Insightful PDF reports generated based on assessment results.
+- **Responsive Design**: Premium UI built with Tailwind CSS and Framer Motion.
 
-**Use Lovable**
+## 🛠️ Tech Stack
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+- **Frontend**: React (Vite), TypeScript
+- **Styling**: Tailwind CSS, shadcn/ui
+- **Animations**: Framer Motion
+- **Backend & Auth**: Supabase
+- **Icons**: Lucide React
+- **Routing**: React Router DOM
 
-Changes made via Lovable will be committed automatically to this repo.
+## 🏁 Getting Started
 
-**Use your preferred IDE**
+### Prerequisites
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+- Node.js (v18 or higher)
+- npm or yarn
+- Supabase account
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+### Installation
 
-Follow these steps:
+1. **Clone the repository**
+   ```bash
+   git clone <repository-url>
+   cd navspro
+   ```
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+3. **Environment Setup**
+   Create a `.env` file in the root directory and add your Supabase credentials:
+   ```env
+   VITE_SUPABASE_URL=your_supabase_project_url
+   VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+   ```
 
-# Step 3: Install the necessary dependencies.
-npm i
+4. **Run Development Server**
+   ```bash
+   npm run dev
+   ```
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+## 🗄️ Database Schema
+
+The project uses Supabase with the following main tables:
+
+- **`profiles`**: Stores user details (name, email, city, grade, etc.).
+- **`assessments`**: Stores user assessment answers and completion status.
+
+## 🧪 Testing Email Verification
+
+NAVSPRO includes a robust email verification flow. When signing up:
+1. User receives an email with a verification link.
+2. Clicking the link verifies the account via Supabase.
+3. User is automatically redirected to the Dashboard upon success.
+
+## 📦 Building for Production
+
+To create a production build:
+
+```bash
+npm run build
 ```
 
-**Edit a file directly in GitHub**
+This will generate a `dist` folder ready for deployment to Vercel, Netlify, or similar platforms.
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## 📄 License
 
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+© 2026 NAVSPRO. All rights reserved.
