@@ -4,7 +4,8 @@ import { useAuth } from "@/context/AuthContext";
 import { motion } from "framer-motion";
 import { Eye, EyeOff, Mail, Lock, User, ArrowRight, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/lib/supabase";
+import { createUserWithEmailAndPassword, sendEmailVerification, updateProfile } from "firebase/auth";
+import { auth } from "@/lib/firebase";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -42,22 +43,29 @@ const Signup = () => {
     setLoading(true);
 
     try {
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            full_name: name,
-          },
-        },
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+
+      // Set display name
+      await updateProfile(userCredential.user, {
+        displayName: name,
       });
 
-      if (error) throw error;
+      // Send email verification
+      await sendEmailVerification(userCredential.user);
 
       toast.success("Account created! Please check your email.");
       setVerificationSent(true);
     } catch (error: any) {
-      toast.error(error.message || "Failed to create account");
+      const code = error.code;
+      if (code === "auth/email-already-in-use") {
+        toast.error("An account with this email already exists.");
+      } else if (code === "auth/weak-password") {
+        toast.error("Password is too weak. Please use a stronger password.");
+      } else if (code === "auth/invalid-email") {
+        toast.error("Invalid email address.");
+      } else {
+        toast.error(error.message || "Failed to create account");
+      }
     } finally {
       setLoading(false);
     }

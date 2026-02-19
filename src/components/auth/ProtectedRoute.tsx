@@ -17,10 +17,5 @@ export const ProtectedRoute = () => {
         return <Navigate to="/login" replace />;
     }
 
-    // Optional: Check for email verification strictly if needed
-    // if (!user.email_confirmed_at) {
-    //    return <Navigate to="/verify-email" replace />; 
-    // }
-
     return <Outlet />;
 };

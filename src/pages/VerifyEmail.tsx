@@ -3,13 +3,15 @@ import { useSearchParams, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { CheckCircle2, XCircle, Loader2, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/lib/supabase";
+import { applyActionCode } from "firebase/auth";
+import { auth } from "@/lib/firebase";
 import { toast } from "sonner";
 
 const VerifyEmail = () => {
     const [searchParams] = useSearchParams();
-    const token_hash = searchParams.get("token_hash");
-    const type = searchParams.get("type");
+    // Firebase uses 'oobCode' for email verification action codes
+    const oobCode = searchParams.get("oobCode");
+    const mode = searchParams.get("mode");
 
     const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
     const [message, setMessage] = useState("Verifying your email...");
@@ -17,87 +19,44 @@ const VerifyEmail = () => {
 
     useEffect(() => {
         const verifyEmail = async () => {
-            if (!token_hash || !type) {
+            if (!oobCode) {
                 setStatus("error");
                 setMessage("Invalid verification link.");
                 return;
             }
 
-            // Strict Mode Protection: Ensure we only run this once
-            if (verifiedRef.current) {
-                console.log("Verification already in progress or completed, skipping.");
-                return;
-            }
+            // Strict Mode Protection
+            if (verifiedRef.current) return;
             verifiedRef.current = true;
 
             try {
-                console.log("Verifying token:", token_hash, "type:", type);
+                await applyActionCode(auth, oobCode);
 
-                const { error, data } = await supabase.auth.verifyOtp({
-                    token_hash,
-                    type: type as any,
-                });
+                setStatus("success");
+                setMessage("Your email has been verified successfully!");
+                toast.success("Email verified!");
 
-                console.log("Verify result:", { error, data });
-
-                if (error) {
-                    // Specific handling for "Email already confirmed"
-                    if (error.message.includes("Email link is invalid or has expired") || error.message.includes("already confirmed")) {
-                        console.warn("Got error but checking if user is actually verified...");
-                    } else {
-                        throw error;
-                    }
-                }
-
-                // Allow a moment for session to propagate
-                await new Promise(resolve => setTimeout(resolve, 500));
-
-                // Check if session was actually created or exists
-                const { data: { session } } = await supabase.auth.getSession();
-                console.log("Session after verification:", session);
-
-                if (session) {
-                    setStatus("success");
-                    setMessage("Your email has been verified successfully. Redirecting...");
-                    toast.success("Email verified!");
-
-                    setTimeout(() => {
-                        window.location.href = "/dashboard";
-                    }, 1500);
-                } else {
-                    // Try refreshing session one more time
-                    const { data: { user } } = await supabase.auth.getUser();
-                    if (user && user.email_confirmed_at) {
-                        setStatus("success");
-                        setMessage("Verified! Please log in.");
-                        setTimeout(() => { window.location.href = "/login?verified=true"; }, 2000);
-                    } else {
-                        if (error) throw error;
-                        throw new Error("Verification succeeded but no session established. Please try logging in manually.");
-                    }
-                }
+                // Redirect to login after 2 seconds
+                setTimeout(() => {
+                    window.location.href = "/login";
+                }, 2000);
 
             } catch (error: any) {
                 console.error("Verification error:", error);
 
-                // Final fallback check: if session exists, we are good.
-                const { data: { session } } = await supabase.auth.getSession();
-                if (session) {
-                    console.log("Error caught but session exists. Treating as success.");
-                    setStatus("success");
-                    setMessage("Redirecting...");
-                    window.location.href = "/dashboard";
-                    return;
+                if (error.code === "auth/invalid-action-code") {
+                    setStatus("error");
+                    setMessage("This verification link has expired or already been used.");
+                } else {
+                    setStatus("error");
+                    setMessage(error.message || "Failed to verify email.");
                 }
-
-                setStatus("error");
-                setMessage(error.message || "Failed to verify email.");
                 toast.error("Verification failed");
             }
         };
 
         verifyEmail();
-    }, [token_hash, type]);
+    }, [oobCode]);
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-background p-4">
@@ -145,7 +104,7 @@ const VerifyEmail = () => {
                             animate={{ opacity: 1, y: 0 }}
                             className="text-muted-foreground mb-8"
                         >
-                            Your account is now active. You can close this page and log in to NAVSPRO to start your career discovery journey.
+                            Your account is now active. You can now log in to NAVSPRO to start your career discovery journey.
                         </motion.p>
 
                         <motion.div
@@ -153,8 +112,8 @@ const VerifyEmail = () => {
                             animate={{ opacity: 1, y: 0 }}
                         >
                             <Button asChild variant="hero" size="lg" className="w-full max-w-xs">
-                                <Link to="/dashboard">
-                                    Go to Dashboard
+                                <Link to="/login">
+                                    Go to Login
                                     <ArrowRight className="w-4 h-4 ml-2" />
                                 </Link>
                             </Button>

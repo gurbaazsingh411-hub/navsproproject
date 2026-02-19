@@ -4,7 +4,8 @@ import { useAuth } from "@/context/AuthContext";
 import { motion } from "framer-motion";
 import { Eye, EyeOff, Mail, Lock, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/lib/supabase";
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { auth } from "@/lib/firebase";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -31,20 +32,23 @@ const Login = () => {
     setLoading(true);
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
 
-      if (error) throw error;
+      // Check if email is verified
+      if (!userCredential.user.emailVerified) {
+        toast.error("Please verify your email first.");
+        setLoading(false);
+        return;
+      }
 
       toast.success("Welcome back!");
       navigate("/dashboard");
     } catch (error: any) {
-      if (error.message.includes("Email not confirmed")) {
-        toast.error("Please verify your email first.");
-      } else if (error.message.includes("Invalid login")) {
+      const code = error.code;
+      if (code === "auth/user-not-found" || code === "auth/wrong-password" || code === "auth/invalid-credential") {
         toast.error("Invalid email or password.");
+      } else if (code === "auth/too-many-requests") {
+        toast.error("Too many attempts. Please try again later.");
       } else {
         toast.error(error.message || "Failed to sign in");
       }
