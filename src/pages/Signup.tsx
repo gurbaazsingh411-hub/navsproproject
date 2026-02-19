@@ -6,6 +6,7 @@ import { Eye, EyeOff, Mail, Lock, User, ArrowRight, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { createUserWithEmailAndPassword, sendEmailVerification, updateProfile } from "firebase/auth";
 import { auth } from "@/lib/firebase";
+import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -48,6 +49,14 @@ const Signup = () => {
       // Set display name
       await updateProfile(userCredential.user, {
         displayName: name,
+      });
+
+      // Create profile in Supabase (replaces the old auto-trigger)
+      await supabase.from("profiles").upsert({
+        id: userCredential.user.uid,
+        full_name: name,
+        email: email,
+        updated_at: new Date().toISOString(),
       });
 
       // Send email verification
