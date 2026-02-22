@@ -2,7 +2,7 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
 import { WelcomeBanner } from "@/components/dashboard/WelcomeBanner";
 import { ProgressSnapshot } from "@/components/dashboard/ProgressSnapshot";
-import { TodaysFocus } from "@/components/dashboard/TodaysFocus";
+
 import { ProfileForm } from "@/components/dashboard/ProfileForm";
 import { AnimatePresence, motion } from "framer-motion";
 
@@ -91,10 +91,7 @@ const Dashboard = () => {
 
             <ProgressSnapshot progressPercentage={progress} />
 
-            <div className="grid lg:grid-cols-2 gap-6">
-              <TodaysFocus />
-              {/* Messages section removed */}
-            </div>
+
           </div>
         </main>
       </div>
