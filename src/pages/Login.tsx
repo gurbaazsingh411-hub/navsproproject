@@ -138,7 +138,7 @@ const Login = () => {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="space-y-4">
+              <form onSubmit={handleLogin} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="email">Email</Label>
                   <div className="relative">
@@ -150,6 +150,7 @@ const Login = () => {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       className="pl-10"
+                      required
                     />
                   </div>
                 </div>
@@ -173,6 +174,7 @@ const Login = () => {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       className="pl-10 pr-10"
+                      required
                     />
                     <button
                       type="button"
@@ -190,13 +192,13 @@ const Login = () => {
                     Remember me for 30 days
                   </Label>
                 </div>
-              </div>
 
-              <form onSubmit={handleLogin} className="space-y-6 pt-4">
-                <Button variant="hero" size="lg" className="w-full" disabled={loading}>
-                  {loading ? "Signing in..." : "Sign In"}
-                  {!loading && <ArrowRight className="ml-2 h-4 w-4" />}
-                </Button>
+                <div className="pt-2">
+                  <Button variant="hero" size="lg" className="w-full" disabled={loading}>
+                    {loading ? "Signing in..." : "Sign In"}
+                    {!loading && <ArrowRight className="ml-2 h-4 w-4" />}
+                  </Button>
+                </div>
               </form>
 
               <div className="relative">

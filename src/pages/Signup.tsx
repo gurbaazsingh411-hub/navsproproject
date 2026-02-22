@@ -19,6 +19,7 @@ const Signup = () => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [loading, setLoading] = useState(false);
   const [verificationSent, setVerificationSent] = useState(false);
 
@@ -41,17 +42,21 @@ const Signup = () => {
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!agreedToTerms) {
+      toast.error("Please agree to the Terms of Service and Privacy Policy.");
+      return;
+    }
+
     setLoading(true);
 
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
 
-      // Set display name
       await updateProfile(userCredential.user, {
         displayName: name,
       });
 
-      // Create profile in Supabase (replaces the old auto-trigger)
       await supabase.from("profiles").upsert({
         id: userCredential.user.uid,
         full_name: name,
@@ -59,7 +64,6 @@ const Signup = () => {
         updated_at: new Date().toISOString(),
       });
 
-      // Send email verification
       await sendEmailVerification(userCredential.user);
 
       toast.success("Account created! Please check your email.");
@@ -112,17 +116,13 @@ const Signup = () => {
     );
   }
 
-
   return (
     <div className="min-h-screen flex">
-      {/* Left Panel - Branding */}
+      {/* Left Branding Panel */}
       <div className="hidden lg:flex lg:w-1/2 bg-primary relative overflow-hidden">
         <div className="absolute inset-0" style={{ background: "var(--gradient-hero)" }} />
-
-        {/* Floating decorative elements */}
         <div className="absolute top-20 right-20 w-32 h-32 rounded-full bg-accent/20 blur-3xl animate-pulse-glow" />
         <div className="absolute bottom-20 left-20 w-48 h-48 rounded-full bg-secondary/20 blur-3xl animate-pulse-glow" style={{ animationDelay: "1.5s" }} />
-        <div className="absolute top-1/3 right-1/4 w-20 h-20 rounded-full bg-accent/30 blur-2xl animate-float-delayed" />
 
         <div className="relative z-10 flex flex-col justify-center items-center w-full p-12 text-primary-foreground">
           <motion.div
@@ -132,50 +132,34 @@ const Signup = () => {
             className="text-center"
           >
             <h1 className="text-4xl font-bold mb-4">NAVSPRO</h1>
-            <p className="text-xl text-primary-foreground/80 mb-8">
-              Start Your Career Journey Today
-            </p>
+            <p className="text-xl text-primary-foreground/80 mb-8">Start Your Career Journey Today</p>
 
-            <div className="space-y-6 max-w-md text-left">
-              <div className="glass-dark rounded-2xl p-6 border border-primary-foreground/10">
-                <h3 className="font-semibold text-lg mb-4">What you'll get:</h3>
-                <ul className="space-y-3">
-                  <li className="flex items-center gap-3">
-                    <div className="w-6 h-6 rounded-full bg-success/20 flex items-center justify-center">
+            <div className="glass-dark rounded-2xl p-6 border border-primary-foreground/10 max-w-md text-left">
+              <h3 className="font-semibold text-lg mb-4">What you'll get:</h3>
+              <ul className="space-y-3">
+                {[
+                  "Comprehensive career assessment",
+                  "Personalized development roadmap",
+                  "AI-powered mentor guidance",
+                  "Progress tracking & insights",
+                ].map((item) => (
+                  <li key={item} className="flex items-center gap-3">
+                    <div className="w-6 h-6 rounded-full bg-success/20 flex items-center justify-center shrink-0">
                       <Check className="w-4 h-4 text-success" />
                     </div>
-                    <span className="text-primary-foreground/90">Comprehensive career assessment</span>
+                    <span className="text-primary-foreground/90">{item}</span>
                   </li>
-                  <li className="flex items-center gap-3">
-                    <div className="w-6 h-6 rounded-full bg-success/20 flex items-center justify-center">
-                      <Check className="w-4 h-4 text-success" />
-                    </div>
-                    <span className="text-primary-foreground/90">Personalized development roadmap</span>
-                  </li>
-                  <li className="flex items-center gap-3">
-                    <div className="w-6 h-6 rounded-full bg-success/20 flex items-center justify-center">
-                      <Check className="w-4 h-4 text-success" />
-                    </div>
-                    <span className="text-primary-foreground/90">AI-powered mentor guidance</span>
-                  </li>
-                  <li className="flex items-center gap-3">
-                    <div className="w-6 h-6 rounded-full bg-success/20 flex items-center justify-center">
-                      <Check className="w-4 h-4 text-success" />
-                    </div>
-                    <span className="text-primary-foreground/90">Progress tracking & insights</span>
-                  </li>
-                </ul>
-              </div>
-
-              <p className="text-sm text-primary-foreground/60 text-center">
-                Join 10,000+ students already on their path to success
-              </p>
+                ))}
+              </ul>
             </div>
+            <p className="text-sm text-primary-foreground/60 mt-6">
+              Join 10,000+ students already on their path to success
+            </p>
           </motion.div>
         </div>
       </div>
 
-      {/* Right Panel - Signup Form */}
+      {/* Right Signup Form */}
       <div className="w-full lg:w-1/2 flex items-center justify-center p-8 bg-background">
         <motion.div
           initial={{ opacity: 0, x: 20 }}
@@ -183,7 +167,6 @@ const Signup = () => {
           transition={{ duration: 0.5 }}
           className="w-full max-w-md"
         >
-          {/* Mobile Logo */}
           <div className="lg:hidden text-center mb-8">
             <h1 className="text-3xl font-bold text-primary">NAVSPRO</h1>
             <p className="text-muted-foreground">Start Your Career Journey</p>
@@ -197,7 +180,7 @@ const Signup = () => {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="space-y-4">
+              <form onSubmit={handleSignup} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="name">Full Name</Label>
                   <div className="relative">
@@ -209,6 +192,7 @@ const Signup = () => {
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                       className="pl-10"
+                      required
                     />
                   </div>
                 </div>
@@ -224,6 +208,7 @@ const Signup = () => {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       className="pl-10"
+                      required
                     />
                   </div>
                 </div>
@@ -239,6 +224,8 @@ const Signup = () => {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       className="pl-10 pr-10"
+                      required
+                      minLength={8}
                     />
                     <button
                       type="button"
@@ -249,7 +236,6 @@ const Signup = () => {
                     </button>
                   </div>
 
-                  {/* Password Strength Indicator */}
                   {password && (
                     <div className="space-y-2 pt-2">
                       <div className="flex gap-1">
@@ -257,12 +243,9 @@ const Signup = () => {
                           <div
                             key={level}
                             className={`h-1.5 flex-1 rounded-full transition-colors ${passwordStrength >= level
-                              ? passwordStrength <= 1
-                                ? "bg-destructive"
-                                : passwordStrength <= 2
-                                  ? "bg-warning"
-                                  : passwordStrength <= 3
-                                    ? "bg-secondary"
+                              ? passwordStrength <= 1 ? "bg-destructive"
+                                : passwordStrength <= 2 ? "bg-warning"
+                                  : passwordStrength <= 3 ? "bg-secondary"
                                     : "bg-success"
                               : "bg-muted"
                               }`}
@@ -273,8 +256,7 @@ const Signup = () => {
                         {passwordRequirements.map((req, index) => (
                           <div
                             key={index}
-                            className={`flex items-center gap-1.5 text-xs transition-colors ${req.met ? "text-success" : "text-muted-foreground"
-                              }`}
+                            className={`flex items-center gap-1.5 text-xs transition-colors ${req.met ? "text-success" : "text-muted-foreground"}`}
                           >
                             <Check className={`h-3 w-3 ${req.met ? "opacity-100" : "opacity-30"}`} />
                             {req.label}
@@ -286,27 +268,27 @@ const Signup = () => {
                 </div>
 
                 <div className="flex items-start space-x-2">
-                  <Checkbox id="terms" className="mt-0.5" />
+                  <Checkbox
+                    id="terms"
+                    className="mt-0.5"
+                    checked={agreedToTerms}
+                    onCheckedChange={(checked) => setAgreedToTerms(checked as boolean)}
+                  />
                   <Label htmlFor="terms" className="text-sm font-normal text-muted-foreground leading-relaxed">
                     I agree to the{" "}
-                    <Link to="/terms" className="text-secondary hover:underline">Terms of Service</Link>
+                    <span className="text-secondary">Terms of Service</span>
                     {" "}and{" "}
-                    <Link to="/privacy" className="text-secondary hover:underline">Privacy Policy</Link>
+                    <span className="text-secondary">Privacy Policy</span>
                   </Label>
                 </div>
-              </div>
 
-              <form onSubmit={handleSignup} className="space-y-6 pt-4">
-                <Button variant="hero" size="lg" className="w-full" disabled={loading}>
-                  {loading ? "Creating Account..." : "Create Account"}
-                  {!loading && <ArrowRight className="ml-2 h-4 w-4" />}
-                </Button>
+                <div className="pt-2">
+                  <Button variant="hero" size="lg" className="w-full" disabled={loading}>
+                    {loading ? "Creating Account..." : "Create Account"}
+                    {!loading && <ArrowRight className="ml-2 h-4 w-4" />}
+                  </Button>
+                </div>
               </form>
-
-              <div className="relative">
-                {/* Google login removed */}
-              </div>
-
 
               <p className="text-center text-sm text-muted-foreground">
                 Already have an account?{" "}
