@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
-import { motion } from "framer-motion";
-import { Eye, EyeOff, Mail, Lock, ArrowRight } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Eye, EyeOff, Mail, Lock, ArrowRight, AlertCircle, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { signInWithEmailAndPassword } from "firebase/auth";
+import { signInWithEmailAndPassword, sendEmailVerification, signOut as firebaseSignOut } from "firebase/auth";
 import { auth } from "@/lib/firebase";
+import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,6 +19,9 @@ const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [unverifiedUser, setUnverifiedUser] = useState<any>(null);
+  const [resendLoading, setResendLoading] = useState(false);
+  const [resendSent, setResendSent] = useState(false);
 
   const { session, loading: authLoading } = useAuth();
 
@@ -30,16 +34,27 @@ const Login = () => {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setUnverifiedUser(null);
+    setResendSent(false);
 
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      // Step 1: Use Firebase to verify the user's email confirmation status
+      const firebaseCredential = await signInWithEmailAndPassword(auth, email, password);
 
-      // Check if email is verified
-      if (!userCredential.user.emailVerified) {
-        toast.error("Please verify your email first.");
+      if (!firebaseCredential.user.emailVerified) {
+        // Store ref for resend button, but don't allow access
+        setUnverifiedUser(firebaseCredential.user);
+        await firebaseSignOut(auth);
         setLoading(false);
         return;
       }
+
+      // Step 2: Clean up Firebase session — Supabase drives everything from here
+      await firebaseSignOut(auth);
+
+      // Step 3: Sign into Supabase to get a real JWT (makes RLS work)
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw error;
 
       toast.success("Welcome back!");
       navigate("/dashboard");
@@ -49,6 +64,8 @@ const Login = () => {
         toast.error("Invalid email or password.");
       } else if (code === "auth/too-many-requests") {
         toast.error("Too many attempts. Please try again later.");
+      } else if (error.message?.includes("Invalid login credentials")) {
+        toast.error("Invalid email or password.");
       } else {
         toast.error(error.message || "Failed to sign in");
       }
@@ -57,14 +74,25 @@ const Login = () => {
     }
   };
 
+  const handleResendVerification = async () => {
+    if (!unverifiedUser) return;
+    setResendLoading(true);
+    try {
+      await sendEmailVerification(unverifiedUser);
+      setResendSent(true);
+      toast.success("Verification email sent!");
+    } catch {
+      toast.error("Failed to resend email. Please try again.");
+    } finally {
+      setResendLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen flex">
       {/* Left Panel - Branding */}
       <div className="hidden lg:flex lg:w-1/2 bg-primary relative overflow-hidden">
         <div className="absolute inset-0" style={{ background: "var(--gradient-hero)" }} />
-
-        {/* Floating decorative elements */}
         <div className="absolute top-20 left-20 w-32 h-32 rounded-full bg-secondary/20 blur-3xl animate-pulse-glow" />
         <div className="absolute bottom-32 right-20 w-48 h-48 rounded-full bg-accent/20 blur-3xl animate-pulse-glow" style={{ animationDelay: "1s" }} />
         <div className="absolute top-1/2 left-1/3 w-24 h-24 rounded-full bg-secondary/30 blur-2xl animate-float" />
@@ -77,40 +105,24 @@ const Login = () => {
             className="text-center"
           >
             <h1 className="text-4xl font-bold mb-4">NAVSPRO</h1>
-            <p className="text-xl text-primary-foreground/80 mb-8">
-              Your AI-Powered Career Navigator
-            </p>
+            <p className="text-xl text-primary-foreground/80 mb-8">Your AI-Powered Career Navigator</p>
 
             <div className="space-y-6 max-w-md">
-              <div className="flex items-center gap-4 text-left">
-                <div className="w-12 h-12 rounded-xl bg-secondary/20 flex items-center justify-center">
-                  <span className="text-2xl">🎯</span>
+              {[
+                { icon: "🎯", title: "Personalized Guidance", desc: "AI-driven career recommendations" },
+                { icon: "📊", title: "Track Your Progress", desc: "Monitor your career readiness journey" },
+                { icon: "🚀", title: "Achieve Your Goals", desc: "Step-by-step career development" },
+              ].map((item) => (
+                <div key={item.title} className="flex items-center gap-4 text-left">
+                  <div className="w-12 h-12 rounded-xl bg-secondary/20 flex items-center justify-center">
+                    <span className="text-2xl">{item.icon}</span>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold">{item.title}</h3>
+                    <p className="text-sm text-primary-foreground/70">{item.desc}</p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="font-semibold">Personalized Guidance</h3>
-                  <p className="text-sm text-primary-foreground/70">AI-driven career recommendations</p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-4 text-left">
-                <div className="w-12 h-12 rounded-xl bg-secondary/20 flex items-center justify-center">
-                  <span className="text-2xl">📊</span>
-                </div>
-                <div>
-                  <h3 className="font-semibold">Track Your Progress</h3>
-                  <p className="text-sm text-primary-foreground/70">Monitor your career readiness journey</p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-4 text-left">
-                <div className="w-12 h-12 rounded-xl bg-secondary/20 flex items-center justify-center">
-                  <span className="text-2xl">🚀</span>
-                </div>
-                <div>
-                  <h3 className="font-semibold">Achieve Your Goals</h3>
-                  <p className="text-sm text-primary-foreground/70">Step-by-step career development</p>
-                </div>
-              </div>
+              ))}
             </div>
           </motion.div>
         </div>
@@ -124,7 +136,6 @@ const Login = () => {
           transition={{ duration: 0.5 }}
           className="w-full max-w-md"
         >
-          {/* Mobile Logo */}
           <div className="lg:hidden text-center mb-8">
             <h1 className="text-3xl font-bold text-primary">NAVSPRO</h1>
             <p className="text-muted-foreground">Your AI-Powered Career Navigator</p>
@@ -133,9 +144,7 @@ const Login = () => {
           <Card className="border-0 shadow-medium">
             <CardHeader className="space-y-1 pb-6">
               <CardTitle className="text-2xl font-bold">Welcome back</CardTitle>
-              <CardDescription>
-                Enter your credentials to access your account
-              </CardDescription>
+              <CardDescription>Enter your credentials to access your account</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <form onSubmit={handleLogin} className="space-y-4">
@@ -158,10 +167,7 @@ const Login = () => {
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <Label htmlFor="password">Password</Label>
-                    <Link
-                      to="/forgot-password"
-                      className="text-sm text-secondary hover:text-secondary/80 transition-colors"
-                    >
+                    <Link to="/forgot-password" className="text-sm text-secondary hover:text-secondary/80 transition-colors">
                       Forgot password?
                     </Link>
                   </div>
@@ -201,10 +207,46 @@ const Login = () => {
                 </div>
               </form>
 
-              <div className="relative">
-                {/* Google login removed */}
-              </div>
-
+              {/* Email not verified banner */}
+              <AnimatePresence>
+                {unverifiedUser && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    className="rounded-xl border border-warning/40 bg-warning/10 p-4"
+                  >
+                    {resendSent ? (
+                      <div className="flex items-center gap-3">
+                        <CheckCircle2 className="h-5 w-5 text-success shrink-0" />
+                        <div>
+                          <p className="text-sm font-medium text-foreground">Verification email sent!</p>
+                          <p className="text-xs text-muted-foreground">Check your inbox and click the link, then sign in again.</p>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex items-start gap-3">
+                        <AlertCircle className="h-5 w-5 text-warning shrink-0 mt-0.5" />
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-foreground">Email not verified</p>
+                          <p className="text-xs text-muted-foreground mb-3">
+                            Please verify your email before signing in.
+                          </p>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="w-full text-xs"
+                            onClick={handleResendVerification}
+                            disabled={resendLoading}
+                          >
+                            {resendLoading ? "Sending..." : "Resend verification email"}
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
               <p className="text-center text-sm text-muted-foreground">
                 Don't have an account?{" "}

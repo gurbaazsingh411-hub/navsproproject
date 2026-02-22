@@ -1,49 +1,47 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Mail, ArrowLeft, ArrowRight, CheckCircle2 } from "lucide-react";
+import { Mail, ArrowLeft, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { sendPasswordResetEmail } from "firebase/auth";
-import { auth } from "@/lib/firebase";
+import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState("");
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setError("");
+
     try {
-      await sendPasswordResetEmail(auth, email);
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+
+      if (error) throw error;
+
       setIsSubmitted(true);
       toast.success("Password reset email sent!");
-    } catch (error: any) {
-      const code = error.code;
-      if (code === "auth/user-not-found") {
-        toast.error("No account found with this email address.");
-      } else if (code === "auth/invalid-email") {
-        toast.error("Please enter a valid email address.");
-      } else {
-        toast.error(error.message || "Failed to send reset email.");
-      }
+    } catch (err: any) {
+      setError(err.message || "Failed to send reset email. Please try again.");
+      toast.error(err.message || "Failed to send reset email.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-8 bg-background relative overflow-hidden">
-      {/* Background decorative elements */}
-      <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
-        <div className="absolute top-20 left-20 w-64 h-64 rounded-full bg-primary/5 blur-3xl" />
-        <div className="absolute bottom-20 right-20 w-96 h-96 rounded-full bg-secondary/5 blur-3xl" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] rounded-full bg-accent/3 blur-3xl" />
-      </div>
+    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+      {/* Background glows */}
+      <div className="fixed top-20 right-20 w-64 h-64 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
+      <div className="fixed bottom-20 left-20 w-64 h-64 rounded-full bg-secondary/10 blur-3xl pointer-events-none" />
 
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -51,123 +49,124 @@ const ForgotPassword = () => {
         transition={{ duration: 0.5 }}
         className="w-full max-w-md relative z-10"
       >
-        {/* Logo */}
-        <div className="text-center mb-8">
-          <Link to="/" className="inline-block">
-            <h1 className="text-3xl font-bold text-primary">NAVSPRO</h1>
-          </Link>
-        </div>
-
         <Card className="border-0 shadow-medium">
-          <AnimatePresence mode="wait">
-            {!isSubmitted ? (
-              <motion.div
-                key="form"
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 20 }}
-                transition={{ duration: 0.3 }}
-              >
-                <CardHeader className="space-y-1 pb-6">
-                  <CardTitle className="text-2xl font-bold">Forgot password?</CardTitle>
-                  <CardDescription>
-                    No worries, we'll send you reset instructions.
+          <CardHeader className="space-y-1 pb-2">
+            <AnimatePresence mode="wait">
+              {isSubmitted ? (
+                <motion.div
+                  key="success"
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="text-center py-4"
+                >
+                  <div className="mx-auto w-16 h-16 bg-success/10 rounded-full flex items-center justify-center mb-4">
+                    <CheckCircle2 className="w-8 h-8 text-success" />
+                  </div>
+                  <CardTitle className="text-2xl font-bold">Email sent!</CardTitle>
+                  <CardDescription className="text-base mt-2">
+                    Check your inbox at <span className="font-medium text-foreground">{email}</span> for a link to reset your password.
                   </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <form onSubmit={handleSubmit} className="space-y-6">
-                    <div className="space-y-2">
-                      <Label htmlFor="email">Email</Label>
-                      <div className="relative">
-                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input
-                          id="email"
-                          type="email"
-                          placeholder="name@example.com"
-                          value={email}
-                          onChange={(e) => setEmail(e.target.value)}
-                          className="pl-10"
-                          required
-                        />
-                      </div>
-                    </div>
+                </motion.div>
+              ) : (
+                <motion.div key="form-header" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                  <div className="mx-auto w-14 h-14 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+                    <Mail className="w-7 h-7 text-primary" />
+                  </div>
+                  <CardTitle className="text-2xl font-bold text-center">Reset password</CardTitle>
+                  <CardDescription className="text-center mt-1">
+                    Enter your email and we'll send you a reset link
+                  </CardDescription>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </CardHeader>
 
-                    <Button variant="hero" size="lg" className="w-full" type="submit" disabled={loading}>
-                      {loading ? "Sending..." : "Reset Password"}
-                      {!loading && <ArrowRight className="ml-2 h-4 w-4" />}
-                    </Button>
-
-                    <Link
-                      to="/login"
-                      className="flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+          <CardContent className="space-y-4 pt-4">
+            <AnimatePresence mode="wait">
+              {isSubmitted ? (
+                <motion.div
+                  key="success-actions"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="space-y-4 text-center"
+                >
+                  <p className="text-sm text-muted-foreground">
+                    Didn't receive the email? Check your spam folder or{" "}
+                    <button
+                      onClick={() => { setIsSubmitted(false); setEmail(""); }}
+                      className="text-secondary hover:text-secondary/80 font-medium transition-colors"
                     >
-                      <ArrowLeft className="h-4 w-4" />
-                      Back to login
-                    </Link>
-                  </form>
-                </CardContent>
-              </motion.div>
-            ) : (
-              <motion.div
-                key="success"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.3 }}
-              >
-                <CardHeader className="space-y-4 pb-6 text-center">
-                  <motion.div
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
-                    className="mx-auto w-16 h-16 rounded-full bg-success/10 flex items-center justify-center"
-                  >
-                    <CheckCircle2 className="h-8 w-8 text-success" />
-                  </motion.div>
-                  <CardTitle className="text-2xl font-bold">Check your email</CardTitle>
-                  <CardDescription className="text-base">
-                    We sent a password reset link to
-                    <br />
-                    <span className="font-medium text-foreground">{email}</span>
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <Button variant="hero" size="lg" className="w-full" asChild>
-                    <a href={`mailto:${email}`}>
-                      Open Email App
-                      <ArrowRight className="ml-2 h-4 w-4" />
-                    </a>
+                      try again
+                    </button>
+                    .
+                  </p>
+                  <Link to="/login">
+                    <Button variant="outline" className="w-full gap-2">
+                      <ArrowLeft className="w-4 h-4" />
+                      Back to Sign In
+                    </Button>
+                  </Link>
+                </motion.div>
+              ) : (
+                <motion.form
+                  key="form"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  onSubmit={handleSubmit}
+                  className="space-y-4"
+                >
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email address</Label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="email"
+                        type="email"
+                        placeholder="name@example.com"
+                        value={email}
+                        onChange={(e) => { setEmail(e.target.value); setError(""); }}
+                        className="pl-10"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <AnimatePresence>
+                    {error && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -5 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -5 }}
+                        className="flex items-start gap-2 rounded-lg border border-destructive/40 bg-destructive/10 p-3"
+                      >
+                        <AlertCircle className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
+                        <p className="text-sm text-destructive">{error}</p>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  <Button variant="hero" size="lg" className="w-full" disabled={loading}>
+                    {loading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Sending...
+                      </>
+                    ) : (
+                      "Send reset link"
+                    )}
                   </Button>
 
-                  <p className="text-center text-sm text-muted-foreground">
-                    Didn't receive the email?{" "}
-                    <button
-                      onClick={() => setIsSubmitted(false)}
-                      className="font-semibold text-secondary hover:text-secondary/80 transition-colors"
-                    >
-                      Click to resend
-                    </button>
-                  </p>
-
-                  <Link
-                    to="/login"
-                    className="flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    <ArrowLeft className="h-4 w-4" />
-                    Back to login
+                  <Link to="/login" className="block">
+                    <Button variant="ghost" className="w-full gap-2 text-muted-foreground">
+                      <ArrowLeft className="w-4 h-4" />
+                      Back to Sign In
+                    </Button>
                   </Link>
-                </CardContent>
-              </motion.div>
-            )}
-          </AnimatePresence>
+                </motion.form>
+              )}
+            </AnimatePresence>
+          </CardContent>
         </Card>
-
-        {/* Help link */}
-        <p className="text-center text-sm text-muted-foreground mt-6">
-          Need help?{" "}
-          <a href="mailto:support@navspro.com" className="text-secondary hover:underline">
-            Contact Support
-          </a>
-        </p>
       </motion.div>
     </div>
   );

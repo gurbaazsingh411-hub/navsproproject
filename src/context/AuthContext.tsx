@@ -1,9 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
-import { User as FirebaseUser, onAuthStateChanged, signOut as firebaseSignOut } from "firebase/auth";
-import { auth } from "@/lib/firebase";
+import { Session, User } from "@supabase/supabase-js";
+import { supabase } from "@/lib/supabase";
 
-// Compatibility layer: expose a user shape that matches what the rest of the app expects
-// (user.id, user.email, user.user_metadata.full_name)
 interface AppUser {
     id: string;
     email: string | null;
@@ -15,43 +13,51 @@ interface AppUser {
 
 interface AuthContextType {
     user: AppUser | null;
-    session: any | null; // truthy when logged in, for backward compat
+    session: Session | null;
     loading: boolean;
     signOut: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-function mapFirebaseUser(fbUser: FirebaseUser | null): AppUser | null {
-    if (!fbUser) return null;
+function mapSupabaseUser(sbUser: User | null): AppUser | null {
+    if (!sbUser) return null;
     return {
-        id: fbUser.uid,
-        email: fbUser.email,
-        emailVerified: fbUser.emailVerified,
+        id: sbUser.id,
+        email: sbUser.email ?? null,
+        emailVerified: !!sbUser.email_confirmed_at,
         user_metadata: {
-            full_name: fbUser.displayName,
+            full_name: sbUser.user_metadata?.full_name ?? null,
         },
     };
 }
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const [user, setUser] = useState<AppUser | null>(null);
+    const [session, setSession] = useState<Session | null>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, (fbUser) => {
-            setUser(mapFirebaseUser(fbUser));
+        // Get the initial session
+        supabase.auth.getSession().then(({ data: { session } }) => {
+            setSession(session);
+            setUser(mapSupabaseUser(session?.user ?? null));
             setLoading(false);
         });
-        return () => unsubscribe();
+
+        // Listen for auth state changes (login, logout, token refresh)
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+            setSession(session);
+            setUser(mapSupabaseUser(session?.user ?? null));
+            setLoading(false);
+        });
+
+        return () => subscription.unsubscribe();
     }, []);
 
     const handleSignOut = async () => {
-        await firebaseSignOut(auth);
+        await supabase.auth.signOut();
     };
-
-    // session is truthy when user is logged in (backward compat)
-    const session = user ? { user } : null;
 
     return (
         <AuthContext.Provider value={{ user, session, loading, signOut: handleSignOut }}>

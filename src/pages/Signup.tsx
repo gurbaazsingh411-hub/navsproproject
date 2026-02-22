@@ -29,8 +29,7 @@ const Signup = () => {
     { label: "One number", met: /[0-9]/.test(password) },
     { label: "One special character", met: /[!@#$%^&*]/.test(password) },
   ];
-
-  const passwordStrength = passwordRequirements.filter(r => r.met).length;
+  const passwordStrength = passwordRequirements.filter((r) => r.met).length;
 
   const { session, loading: authLoading } = useAuth();
 
@@ -51,22 +50,44 @@ const Signup = () => {
     setLoading(true);
 
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      // ── Step 1: Firebase — create account + send verification email ──────────
+      const firebaseCredential = await createUserWithEmailAndPassword(auth, email, password);
+      await updateProfile(firebaseCredential.user, { displayName: name });
+      await sendEmailVerification(firebaseCredential.user);
 
-      await updateProfile(userCredential.user, {
-        displayName: name,
+      // ── Step 2: Supabase — create a matching auth user ────────────────────────
+      // "Confirm email" is turned OFF in Supabase, so no duplicate email is sent.
+      // We get a Supabase UUID which we use for all data records.
+      const { data: sbData, error: sbError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: { full_name: name },
+        },
       });
 
-      await supabase.from("profiles").upsert({
-        id: userCredential.user.uid,
-        full_name: name,
-        email: email,
-        updated_at: new Date().toISOString(),
-      });
+      if (sbError) {
+        // If user already exists in Supabase (e.g., re-registration attempt), that's fine
+        if (!sbError.message.includes("already registered")) {
+          throw sbError;
+        }
+      }
 
-      await sendEmailVerification(userCredential.user);
+      // ── Step 3: Supabase — create profile row using Supabase UUID ─────────────
+      const supabaseUserId = sbData?.user?.id;
+      if (supabaseUserId) {
+        await supabase.from("profiles").upsert({
+          id: supabaseUserId,
+          full_name: name,
+          email: email,
+          updated_at: new Date().toISOString(),
+        });
+      }
 
-      toast.success("Account created! Please check your email.");
+      // ── Step 4: Sign out of Supabase — user must verify email first ───────────
+      await supabase.auth.signOut();
+
+      toast.success("Account created! Please check your email to verify.");
       setVerificationSent(true);
     } catch (error: any) {
       const code = error.code;
@@ -84,6 +105,7 @@ const Signup = () => {
     }
   };
 
+  // ── Verification sent screen ────────────────────────────────────────────────
   if (verificationSent) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background p-4">
@@ -99,15 +121,16 @@ const Signup = () => {
               </div>
               <CardTitle className="text-2xl font-bold">Check your email</CardTitle>
               <CardDescription className="text-base mt-2">
-                We've sent a verification link to <span className="font-medium text-foreground">{email}</span>
+                A verification link was sent to{" "}
+                <span className="font-medium text-foreground">{email}</span>
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6 pt-4">
               <p className="text-sm text-center text-muted-foreground">
-                Click the link in the email to verify your account and access your dashboard.
+                Click the link in the email to verify your account. Once verified, come back and sign in.
               </p>
               <Button variant="outline" className="w-full" onClick={() => navigate("/login")}>
-                Return to Sign In
+                Go to Sign In
               </Button>
             </CardContent>
           </Card>
@@ -152,6 +175,7 @@ const Signup = () => {
                 ))}
               </ul>
             </div>
+
             <p className="text-sm text-primary-foreground/60 mt-6">
               Join 10,000+ students already on their path to success
             </p>
@@ -175,9 +199,7 @@ const Signup = () => {
           <Card className="border-0 shadow-medium">
             <CardHeader className="space-y-1 pb-6">
               <CardTitle className="text-2xl font-bold">Create an account</CardTitle>
-              <CardDescription>
-                Enter your details to get started with NAVSPRO
-              </CardDescription>
+              <CardDescription>Enter your details to get started with NAVSPRO</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <form onSubmit={handleSignup} className="space-y-4">
@@ -243,11 +265,14 @@ const Signup = () => {
                           <div
                             key={level}
                             className={`h-1.5 flex-1 rounded-full transition-colors ${passwordStrength >= level
-                              ? passwordStrength <= 1 ? "bg-destructive"
-                                : passwordStrength <= 2 ? "bg-warning"
-                                  : passwordStrength <= 3 ? "bg-secondary"
-                                    : "bg-success"
-                              : "bg-muted"
+                                ? passwordStrength <= 1
+                                  ? "bg-destructive"
+                                  : passwordStrength <= 2
+                                    ? "bg-warning"
+                                    : passwordStrength <= 3
+                                      ? "bg-secondary"
+                                      : "bg-success"
+                                : "bg-muted"
                               }`}
                           />
                         ))}
@@ -256,7 +281,8 @@ const Signup = () => {
                         {passwordRequirements.map((req, index) => (
                           <div
                             key={index}
-                            className={`flex items-center gap-1.5 text-xs transition-colors ${req.met ? "text-success" : "text-muted-foreground"}`}
+                            className={`flex items-center gap-1.5 text-xs transition-colors ${req.met ? "text-success" : "text-muted-foreground"
+                              }`}
                           >
                             <Check className={`h-3 w-3 ${req.met ? "opacity-100" : "opacity-30"}`} />
                             {req.label}
