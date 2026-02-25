@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Download, Share2, Calendar, Loader2 } from "lucide-react";
+import { ArrowLeft, Download, Calendar, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PersonalityRadar } from "@/components/report/PersonalityRadar";
 import { AptitudeChart } from "@/components/report/AptitudeChart";
@@ -25,23 +25,6 @@ const Report = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  const handleShare = async () => {
-    const shareData = {
-      title: `${data.studentName}'s NAVSPRO Career Report`,
-      text: "Check out my personalized career discovery report from NAVSPRO!",
-      url: window.location.href,
-    };
-    if (navigator.share) {
-      try {
-        await navigator.share(shareData);
-      } catch (err) {
-        // User cancelled — do nothing
-      }
-    } else {
-      await navigator.clipboard.writeText(window.location.href);
-      toast.success("Report link copied to clipboard!");
-    }
-  };
 
   useEffect(() => {
     const fetchAssessmentData = async () => {
@@ -145,10 +128,7 @@ const Report = () => {
           </Button>
 
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" className="gap-2" onClick={handleShare}>
-              <Share2 className="w-4 h-4" />
-              <span className="hidden sm:inline">Share</span>
-            </Button>
+
             <Button
               variant="default"
               size="sm"
