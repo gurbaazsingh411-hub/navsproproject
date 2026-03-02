@@ -1,12 +1,12 @@
 import { motion } from "framer-motion";
-import { AptitudeArea } from "@/data/reportData";
+import { CoreMetric } from "@/data/reportData";
 import { cn } from "@/lib/utils";
 
 interface AptitudeChartProps {
-  areas: AptitudeArea[];
+  areas: CoreMetric[];
 }
 
-const getLevelColor = (level: AptitudeArea["level"]) => {
+const getLevelColor = (level: CoreMetric["level"]) => {
   switch (level) {
     case "strength":
       return "bg-secondary"; // Cooler tones for strengths
@@ -17,7 +17,7 @@ const getLevelColor = (level: AptitudeArea["level"]) => {
   }
 };
 
-const getLevelLabel = (level: AptitudeArea["level"]) => {
+const getLevelLabel = (level: CoreMetric["level"]) => {
   switch (level) {
     case "strength":
       return "Strength";
@@ -41,8 +41,8 @@ export const AptitudeChart = ({ areas }: AptitudeChartProps) => {
           <span className="text-xl">📊</span>
         </div>
         <div>
-          <h3 className="text-lg font-semibold text-foreground">Aptitude Analysis</h3>
-          <p className="text-sm text-muted-foreground">Your cognitive strengths and abilities</p>
+          <h3 className="text-lg font-semibold text-foreground">Core Performance Indicators</h3>
+          <p className="text-sm text-muted-foreground">Your grit, perseverance, and daily lifestyle habits</p>
         </div>
       </div>
 
@@ -85,7 +85,7 @@ export const AptitudeChart = ({ areas }: AptitudeChartProps) => {
                 <span className="text-sm font-semibold text-foreground">{area.score}%</span>
               </div>
             </div>
-            
+
             {/* Progress bar */}
             <div className="h-3 bg-muted rounded-full overflow-hidden">
               <motion.div
@@ -95,7 +95,7 @@ export const AptitudeChart = ({ areas }: AptitudeChartProps) => {
                 className={cn("h-full rounded-full", getLevelColor(area.level))}
               />
             </div>
-            
+
             {/* Insight */}
             <p className="text-xs text-muted-foreground mt-2">{area.insight}</p>
           </motion.div>

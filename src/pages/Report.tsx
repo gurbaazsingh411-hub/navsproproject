@@ -8,14 +8,14 @@ import { AptitudeChart } from "@/components/report/AptitudeChart";
 import { ReadinessRing } from "@/components/report/ReadinessRing";
 import { InterestCards } from "@/components/report/InterestCards";
 import { InsightsSummary } from "@/components/report/InsightsSummary";
+import { ReportExplanation } from "@/components/report/ReportExplanation";
 import { sampleReportData } from "@/data/reportData";
-import html2canvas from "html2canvas";
-import jsPDF from "jspdf";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/lib/supabase";
 import { calculateAssessmentResults } from "@/lib/scoringUtils";
 import { ReportData, transformResultsToReportData } from "@/data/reportData";
+import { PaymentButton } from "@/components/payment/PaymentButton";
 
 const Report = () => {
   const navigate = useNavigate();
@@ -40,7 +40,7 @@ const Report = () => {
         if (data && data.answers) {
           const results = calculateAssessmentResults(data.answers);
           // Use user metadata name or fallback
-          const studentName = user.user_metadata?.full_name || "Student";
+          const studentName = user.user_metadata?.full_name || user.email?.split('@')[0] || "Student";
           const transformed = transformResultsToReportData(results, studentName);
           setReportData(transformed);
         }
@@ -54,15 +54,12 @@ const Report = () => {
 
     if (user) fetchAssessmentData();
     else if (!user) {
-      // If accessing directly without auth, maybe redirect? 
-      // For now, let's just let it load or show empty state.
       setIsLoading(false);
     }
   }, [user]);
 
-  // Use reportData if available, otherwise fallback to sample ONLY if hardcoded (but here we want real)
-  // Or show loading.
-  const data = reportData || sampleReportData; // Fallback to sample for dev/preview if no data found
+  const defaultName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || "Student";
+  const data = reportData || { ...sampleReportData, studentName: defaultName }; // Fallback to sample for dev/preview if no data found
 
   const handleDownloadPDF = async () => {
     if (!reportRef.current) return;
@@ -71,6 +68,12 @@ const Report = () => {
     toast.info("Generating PDF report...");
 
     try {
+      // Dynamically import heavy libraries only when needed to optimize bundle size
+      const [html2canvas, { default: jsPDF }] = await Promise.all([
+        import("html2canvas").then(m => m.default),
+        import("jspdf"),
+      ]);
+
       const canvas = await html2canvas(reportRef.current, {
         scale: 2, // Higher scale for better quality
         useCORS: true, // For cross-origin images
@@ -200,7 +203,7 @@ const Report = () => {
           {/* Charts grid */}
           <div className="grid lg:grid-cols-2 gap-6 mb-10">
             <PersonalityRadar traits={data.personalityTraits} />
-            <AptitudeChart areas={data.aptitudeAreas} />
+            <AptitudeChart areas={data.coreMetrics} />
           </div>
 
           {/* Readiness and Interests */}
@@ -229,6 +232,8 @@ const Report = () => {
             />
           </motion.div>
 
+          <ReportExplanation />
+
           {/* CTA Section - Hide in PDF if possible, or keep it depending on requirement. Keeping it for now. */}
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -243,9 +248,7 @@ const Report = () => {
               Connect with a mentor who can help you explore these paths and create an actionable plan.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center" data-html2canvas-ignore="true">
-              <Button variant="hero" size="lg">
-                Book a Mentor Session
-              </Button>
+              <PaymentButton amount={50000} description="Premium Career Assessment & Mentorship" />
               <Button variant="outline" size="lg">
                 Explore Career Paths
               </Button>

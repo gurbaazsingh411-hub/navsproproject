@@ -1,10 +1,12 @@
+import { AssessmentResults, DimensionScore } from "@/lib/scoringUtils";
+
 export interface PersonalityTrait {
   trait: string;
   score: number;
   description: string;
 }
 
-export interface AptitudeArea {
+export interface CoreMetric {
   area: string;
   score: number;
   level: "strength" | "developing" | "growth";
@@ -21,7 +23,7 @@ export interface ReportData {
   studentName: string;
   assessmentDate: string;
   personalityTraits: PersonalityTrait[];
-  aptitudeAreas: AptitudeArea[];
+  coreMetrics: CoreMetric[];
   interestAreas: InterestArea[];
   readinessScore: number;
   topStrengths: string[];
@@ -40,12 +42,9 @@ export const sampleReportData: ReportData = {
     { trait: "Detail-Oriented", score: 81, description: "You notice the small things and value precision in your work." },
     { trait: "Adaptable", score: 74, description: "You handle change well and stay flexible in new situations." },
   ],
-  aptitudeAreas: [
-    { area: "Logical Reasoning", score: 88, level: "strength", insight: "You excel at identifying patterns and solving complex problems." },
-    { area: "Verbal Communication", score: 75, level: "developing", insight: "You express ideas clearly and are developing persuasive skills." },
-    { area: "Numerical Analysis", score: 82, level: "strength", insight: "Numbers come naturally to you—a valuable skill in many fields." },
-    { area: "Spatial Awareness", score: 65, level: "growth", insight: "With practice, you can strengthen visualization abilities." },
-    { area: "Abstract Thinking", score: 79, level: "developing", insight: "You handle conceptual ideas well and connect different concepts." },
+  coreMetrics: [
+    { area: "GRIT & Perseverance", score: 88, level: "strength", insight: "You possess remarkable determination and stay focused on long-term goals." },
+    { area: "Lifestyle Readiness", score: 75, level: "developing", insight: "Solid basic habits, but some areas of your daily routine could be further optimized." }
   ],
   interestAreas: [
     { name: "Technology & Innovation", score: 92, careers: ["Software Engineering", "Data Science", "Product Management"] },
@@ -54,12 +53,12 @@ export const sampleReportData: ReportData = {
   ],
   readinessScore: 76,
   topStrengths: [
-    "Strong analytical and problem-solving abilities",
+    "High perseverance toward goals",
     "Natural leadership qualities with collaborative mindset",
     "High attention to detail and precision",
   ],
   growthAreas: [
-    "Spatial visualization for design-related tasks",
+    "Improving sleep and screen time habits",
     "Building confidence in public speaking",
     "Expanding creative expression techniques",
   ],
@@ -69,7 +68,6 @@ export const sampleReportData: ReportData = {
     "Research & Development",
   ],
 };
-import { AssessmentResults, DimensionScore } from "@/lib/scoringUtils";
 
 export const CAREER_MAPPINGS: Record<string, string[]> = {
   "Realistic (Hands-on)": ["Engineering", "Architecture", "Construction Management", "Forestry", "Piloting"],
@@ -82,20 +80,19 @@ export const CAREER_MAPPINGS: Record<string, string[]> = {
 
 const getTraitDescription = (trait: string, band: string): string => {
   const descriptions: Record<string, string> = {
-    "Extroversion": band === "high" ? "You thrive in social settings and enjoy collaboration." : "You prefer thoughtful, independent work environments.",
-    "Adaptability": band === "high" ? "You handle change easily and stay flexible." : "You prefer structured and predictable routines.",
-    "Emotional Stability": band === "high" ? "You stay calm and composed under pressure." : "You feel things deeply and are sensitive to stress.",
-    "Risk Taking": band === "high" ? "You are comfortable with uncertainty and bold choices." : "You prefer calculated and safe decisions.",
-    "Independence": band === "high" ? "You excel when working autonomously." : "You value guidance and team support.",
-    "Conscientiousness": band === "high" ? "You are highly organized and detail-oriented." : "You prefer a flexible and spontaneous approach."
+    "Openness": band === "high" ? "You are highly curious, imaginative, and open to trying new things." : "You prefer familiar routines and practical, straightforward ideas.",
+    "Conscientiousness": band === "high" ? "You are highly organized, disciplined, and focused on your goals." : "You prefer a spontaneous and flexible approach rather than strict planning.",
+    "Extraversion": band === "high" ? "You thrive in social settings, draw energy from others, and speak up easily." : "You draw energy from quiet time, preferring deep, independent work.",
+    "Agreeableness": band === "high" ? "You are deeply cooperative, empathetic, and value team harmony." : "You are independent-minded and comfortable prioritizing logic over harmony.",
+    "Neuroticism": band === "high" ? "You experience stress deeply and may worry frequently." : "You are emotionally resilient and handle high-pressure situations calmly."
   };
   return descriptions[trait] || "Trait description pending.";
 };
 
-const getAptitudeInsight = (area: string, band: string): string => {
-  if (band === "high") return `High aptitude in ${area}, indicating a natural strength.`;
-  if (band === "moderate") return `Moderate ability in ${area}, can be improved with practice.`;
-  return `Developing area in ${area}, may require extra focus.`;
+const getCoreInsight = (area: string, band: string): string => {
+  if (band === "high") return area === "GRIT & Perseverance" ? "Exceptional resilience and drive to achieve long-term goals." : "Excellent daily habits and routines that heavily support your success.";
+  if (band === "moderate") return area === "GRIT & Perseverance" ? "Good determination, though you may sometimes struggle when progress is slow." : "Decent daily routines with some room for optimizing sleep, diet, or screen time.";
+  return area === "GRIT & Perseverance" ? "You easily get distracted or discouraged. Building resilience will be key." : "Your daily lifestyle habits significantly hinder your potential and need urgent adjustment.";
 };
 
 
@@ -106,12 +103,24 @@ export const transformResultsToReportData = (results: AssessmentResults, student
     description: getTraitDescription(p.name, p.band)
   }));
 
-  const aptitudeAreas = results.sections.find(s => s.sectionId === 'aptitude')?.dimensions.map(d => ({
-    area: d.name,
-    score: Math.round(d.percentage),
-    level: d.band === 'high' ? 'strength' as const : d.band === 'moderate' ? 'developing' as const : 'growth' as const,
-    insight: getAptitudeInsight(d.name, d.band)
-  })) || [];
+  const coreMetrics: CoreMetric[] = [];
+  if (results.gritScore) {
+    coreMetrics.push({
+      area: results.gritScore.name,
+      score: Math.round(results.gritScore.percentage),
+      level: results.gritScore.band === 'high' ? 'strength' : results.gritScore.band === 'moderate' ? 'developing' : 'growth',
+      insight: getCoreInsight(results.gritScore.name, results.gritScore.band)
+    });
+  }
+  if (results.lifestyleScore) {
+    coreMetrics.push({
+      area: results.lifestyleScore.name,
+      score: Math.round(results.lifestyleScore.percentage),
+      level: results.lifestyleScore.band === 'high' ? 'strength' : results.lifestyleScore.band === 'moderate' ? 'developing' : 'growth',
+      insight: getCoreInsight(results.lifestyleScore.name, results.lifestyleScore.band)
+    });
+  }
+
 
   const interestAreas = results.topInterests.map(i => ({
     name: i.name,
@@ -119,22 +128,28 @@ export const transformResultsToReportData = (results: AssessmentResults, student
     careers: CAREER_MAPPINGS[i.name] || []
   }));
 
-  // Simple readiness score average of study + motivation
-  const readinessScore = Math.round((results.studyStyleScore.percentage + results.motivationScore.percentage) / 2);
+  // Simple readiness score average of GRIT + Lifestyle
+  let rScore = 0;
+  if (results.gritScore && results.lifestyleScore) {
+    rScore = Math.round((results.gritScore.percentage + results.lifestyleScore.percentage) / 2);
+  } else {
+    rScore = 50;
+  }
+  const readinessScore = rScore;
 
   const topStrengths = [
-    ...results.strongAptitudes.map(a => `${a.name} proficiency`),
-    results.studyStyleScore.band === 'high' ? "Consistent Study Habits" : null,
-    results.motivationScore.band === 'high' ? "High Motivation" : null
+    results.gritScore?.band === 'high' ? "Exceptional Perseverance (GRIT)" : null,
+    results.lifestyleScore?.band === 'high' ? "Strong Healthy Habits" : null,
+    ...personalityTraits.filter(p => p.score > 75).map(p => `Strong ${p.trait}`),
   ].filter(Boolean) as string[];
 
   // Fill if empty
   if (topStrengths.length === 0) topStrengths.push("Developing Capabilities");
 
   const growthAreas = [
-    results.studyStyleScore.band === 'low' ? "Study Discipline" : null,
-    results.motivationScore.band === 'low' ? "Motivation Consistency" : null,
-    ...results.sections.find(s => s.sectionId === 'aptitude')?.dimensions.filter(d => d.band === 'low').map(d => d.name) || []
+    results.gritScore?.band === 'low' ? "Building Long-term Resilience" : null,
+    results.lifestyleScore?.band === 'low' ? "Improving Daily Health Habits" : null,
+    ...personalityTraits.filter(p => p.score < 40).map(p => `Developing ${p.trait}`)
   ].filter(Boolean) as string[];
 
   const recommendedPaths = results.topInterests.flatMap(i => CAREER_MAPPINGS[i.name]?.slice(0, 2) || []);
@@ -143,7 +158,7 @@ export const transformResultsToReportData = (results: AssessmentResults, student
     studentName,
     assessmentDate: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
     personalityTraits,
-    aptitudeAreas,
+    coreMetrics,
     interestAreas,
     readinessScore,
     topStrengths: topStrengths.slice(0, 5),

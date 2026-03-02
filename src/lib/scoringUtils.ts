@@ -1,12 +1,11 @@
 // NAVSPRO Scoring Utilities
-// Based on the Scoring Logic document
+// Based on the new Student Assessment Master File logic
 
 import {
     assessmentQuestions,
     assessmentSections,
     AssessmentSection,
     InterestArea,
-    AptitudeArea,
     PersonalityDimension,
 } from "@/data/assessmentQuestions";
 
@@ -21,7 +20,7 @@ export interface DimensionScore {
 }
 
 export interface SectionScores {
-    sectionId: AssessmentSection;
+    sectionId: string;
     sectionTitle: string;
     totalScore: number;
     maxScore: number;
@@ -32,11 +31,9 @@ export interface SectionScores {
 export interface AssessmentResults {
     sections: SectionScores[];
     topInterests: DimensionScore[];
-    strongAptitudes: DimensionScore[];
     personalitySummary: DimensionScore[];
-    studyStyleScore: DimensionScore;
-    motivationScore: DimensionScore;
-    environmentScore: DimensionScore;
+    gritScore?: DimensionScore;
+    lifestyleScore?: DimensionScore;
 }
 
 // Score band thresholds (as percentages)
@@ -59,7 +56,7 @@ export const getScoreBand = (percentage: number): ScoreBand => {
  * Get questions for a specific subsection
  */
 const getQuestionsForSubsection = (
-    section: AssessmentSection,
+    section: string,
     subsection: string
 ) => {
     return assessmentQuestions.filter(
@@ -70,7 +67,7 @@ const getQuestionsForSubsection = (
 /**
  * Get questions for a specific section
  */
-const getQuestionsForSection = (section: AssessmentSection) => {
+const getQuestionsForSection = (section: string) => {
     return assessmentQuestions.filter((q) => q.section === section);
 };
 
@@ -136,67 +133,25 @@ export const calculateInterestScores = (
 };
 
 /**
- * Calculate Aptitude scores
- */
-export const calculateAptitudeScores = (
-    answers: Record<number, number>
-): DimensionScore[] => {
-    const aptitudeAreas: AptitudeArea[] = [
-        "logical",
-        "numerical",
-        "verbal",
-        "spatial",
-        "memory",
-        "problemSolving",
-    ];
-
-    const areaNames: Record<AptitudeArea, string> = {
-        logical: "Logical Reasoning",
-        numerical: "Numerical Ability",
-        verbal: "Verbal Ability",
-        spatial: "Spatial Reasoning",
-        memory: "Memory Retention",
-        problemSolving: "Problem Solving",
-    };
-
-    return aptitudeAreas.map((area) => {
-        const questions = getQuestionsForSubsection("aptitude", area);
-        const questionIds = questions.map((q) => q.id);
-        const { score, maxScore } = calculateScore(questionIds, answers);
-        const percentage = maxScore > 0 ? (score / maxScore) * 100 : 0;
-
-        return {
-            name: areaNames[area],
-            score,
-            maxScore,
-            percentage,
-            band: getScoreBand(percentage),
-        };
-    });
-};
-
-/**
- * Calculate Personality dimension scores
+ * Calculate Personality dimension scores (OCEAN)
  */
 export const calculatePersonalityScores = (
     answers: Record<number, number>
 ): DimensionScore[] => {
     const personalityDimensions: PersonalityDimension[] = [
-        "extroversion",
-        "adaptability",
-        "emotionalStability",
-        "riskTaking",
-        "independence",
+        "openness",
         "conscientiousness",
+        "extraversion",
+        "agreeableness",
+        "neuroticism",
     ];
 
     const dimensionNames: Record<PersonalityDimension, string> = {
-        extroversion: "Extroversion",
-        adaptability: "Adaptability",
-        emotionalStability: "Emotional Stability",
-        riskTaking: "Risk Taking",
-        independence: "Independence",
+        openness: "Openness",
         conscientiousness: "Conscientiousness",
+        extraversion: "Extraversion",
+        agreeableness: "Agreeableness",
+        neuroticism: "Neuroticism",
     };
 
     return personalityDimensions.map((dimension) => {
@@ -219,7 +174,7 @@ export const calculatePersonalityScores = (
  * Calculate section aggregate score
  */
 export const calculateSectionScore = (
-    section: AssessmentSection,
+    section: string,
     answers: Record<number, number>
 ): { score: number; maxScore: number; percentage: number } => {
     const questions = getQuestionsForSection(section);
@@ -242,63 +197,53 @@ export const calculateAssessmentResults = (
         .sort((a, b) => b.percentage - a.percentage)
         .slice(0, 2);
 
-    // Calculate aptitude scores and get strong ones
-    const aptitudeScores = calculateAptitudeScores(answers);
-    const strongAptitudes = aptitudeScores.filter((a) => a.band === "high");
-
     // Calculate personality scores
     const personalityScores = calculatePersonalityScores(answers);
 
-    // Calculate section-level scores
-    const studyStyleData = calculateSectionScore("studyStyle", answers);
-    const motivationData = calculateSectionScore("motivation", answers);
-    const environmentData = calculateSectionScore("environment", answers);
+    // Calculate section-level scores for grit and lifestyle
+    const gritData = calculateSectionScore("grit", answers);
+    const lifestyleData = calculateSectionScore("lifestyle", answers);
 
-    const studyStyleScore: DimensionScore = {
-        name: "Study Style & Discipline",
-        score: studyStyleData.score,
-        maxScore: studyStyleData.maxScore,
-        percentage: studyStyleData.percentage,
-        band: getScoreBand(studyStyleData.percentage),
+    const gritScore: DimensionScore = {
+        name: "GRIT & Perseverance",
+        score: gritData.score,
+        maxScore: gritData.maxScore,
+        percentage: gritData.percentage,
+        band: getScoreBand(gritData.percentage),
     };
 
-    const motivationScore: DimensionScore = {
-        name: "Motivation & Stress Handling",
-        score: motivationData.score,
-        maxScore: motivationData.maxScore,
-        percentage: motivationData.percentage,
-        band: getScoreBand(motivationData.percentage),
-    };
-
-    const environmentScore: DimensionScore = {
-        name: "Environment & Constraints",
-        score: environmentData.score,
-        maxScore: environmentData.maxScore,
-        percentage: environmentData.percentage,
-        band: getScoreBand(environmentData.percentage),
+    const lifestyleScore: DimensionScore = {
+        name: "Lifestyle Readiness",
+        score: lifestyleData.score,
+        maxScore: lifestyleData.maxScore,
+        percentage: lifestyleData.percentage,
+        band: getScoreBand(lifestyleData.percentage),
     };
 
     // Build section scores
     const sections: SectionScores[] = assessmentSections.map((section) => {
-        const sectionData = calculateSectionScore(section.id, answers);
+        const sectionData = calculateSectionScore(section.id as string, answers);
         let dimensions: DimensionScore[] = [];
 
         switch (section.id) {
             case "interest":
                 dimensions = interestScores;
                 break;
-            case "aptitude":
-                dimensions = aptitudeScores;
-                break;
             case "personality":
                 dimensions = personalityScores;
+                break;
+            case "grit":
+                dimensions = [gritScore];
+                break;
+            case "lifestyle":
+                dimensions = [lifestyleScore];
                 break;
             default:
                 dimensions = [];
         }
 
         return {
-            sectionId: section.id,
+            sectionId: section.id as string,
             sectionTitle: section.title,
             totalScore: sectionData.score,
             maxScore: sectionData.maxScore,
@@ -310,11 +255,9 @@ export const calculateAssessmentResults = (
     return {
         sections,
         topInterests,
-        strongAptitudes,
         personalitySummary: personalityScores,
-        studyStyleScore,
-        motivationScore,
-        environmentScore,
+        gritScore,
+        lifestyleScore,
     };
 };
 
