@@ -19,35 +19,27 @@ const Assessment = () => {
   const [isComplete, setIsComplete] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Sync internal loading with auth loading
-  useEffect(() => {
-    if (!authLoading) {
-      // If auth is done and we have no user, stop loading (effect below handles redirect)
-      // If we have user, loadProgress handles turning off isLoading
-      if (!user) setIsLoading(false);
-    }
-  }, [authLoading, user]);
-
   const totalQuestions = assessmentQuestions.length;
   const currentQuestion = assessmentQuestions[currentIndex];
   const progress = ((currentIndex + 1) / totalQuestions) * 100;
   const currentSection = getCurrentSection(currentIndex + 1);
 
-  // Load progress on mount
+  // Sync internal loading and handle auth redirect or data loading
   useEffect(() => {
-    // Redirect if not logged in
-    if (!isLoading && !user) {
+    let mounted = true;
+
+    // Wait until auth is done loading
+    if (authLoading) return;
+
+    if (!user) {
+      // Not logged in, redirect
       toast.error("Please log in to take the assessment");
       navigate("/login");
       return;
     }
 
+    // User is logged in, fetch their progress
     const loadProgress = async () => {
-      if (!user) {
-        // Wait for loading to finish essentially
-        return;
-      }
-
       try {
         const { data, error } = await supabase
           .from("assessments")
@@ -55,13 +47,11 @@ const Assessment = () => {
           .eq("user_id", user.id)
           .single();
 
-        if (data) {
+        if (data && mounted) {
           if (data.answers) setAnswers(data.answers);
-          // If complete, set complete state, otherwise set index to next unanswered question or last saved index
           if (data.is_complete) {
             setIsComplete(true);
           } else {
-            // Calculate next index based on answers count, ensuring we don't go out of bounds
             const answeredCount = Object.keys(data.answers || {}).length;
             setCurrentIndex(Math.min(answeredCount, totalQuestions - 1));
           }
@@ -69,20 +59,16 @@ const Assessment = () => {
       } catch (error) {
         console.error("Error loading progress:", error);
       } finally {
-        setIsLoading(false);
+        if (mounted) setIsLoading(false);
       }
     };
 
-    if (!user && !isLoading) {
-      // double check for immediate redirect
-      navigate("/login");
-    } else if (user) {
-      // Only try loading if we have a user
-      loadProgress();
-    } else {
-      // Still loading auth state
-    }
-  }, [user, isLoading, totalQuestions, navigate]);
+    loadProgress();
+
+    return () => {
+      mounted = false;
+    };
+  }, [user, authLoading, navigate, totalQuestions]);
 
   // Save progress helper
   const saveProgress = async (newAnswers: Record<number, number>, newIndex: number, completed: boolean = false) => {
