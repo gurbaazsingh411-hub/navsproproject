@@ -133,20 +133,12 @@ export const calculateInterestScores = (
 };
 
 /**
- * Calculate Personality dimension scores (OCEAN)
+ * Calculate Personality dimension scores (OCEAN) mapped to existing subsections
  */
 export const calculatePersonalityScores = (
     answers: Record<number, number>
 ): DimensionScore[] => {
-    const personalityDimensions: PersonalityDimension[] = [
-        "openness",
-        "conscientiousness",
-        "extraversion",
-        "agreeableness",
-        "neuroticism",
-    ];
-
-    const dimensionNames: Record<PersonalityDimension, string> = {
+    const dimensionNames: Record<string, string> = {
         openness: "Openness",
         conscientiousness: "Conscientiousness",
         extraversion: "Extraversion",
@@ -154,20 +146,45 @@ export const calculatePersonalityScores = (
         neuroticism: "Neuroticism",
     };
 
-    return personalityDimensions.map((dimension) => {
-        const questions = getQuestionsForSubsection("personality", dimension);
-        const questionIds = questions.map((q) => q.id);
-        const { score, maxScore } = calculateScore(questionIds, answers);
-        const percentage = maxScore > 0 ? (score / maxScore) * 100 : 0;
+    // Mapping new OCEAN to existing questions
+    // O: Risk Taking (Q52-54) + Adaptability (Q46-48)
+    // C: Conscientiousness (Q58-60)
+    // E: Extroversion (Q43-45)
+    // A: Social Interest (Q13-16) mapped as Agreeableness
+    // N: Emotional Stability (Q49-51) INVERTED
 
+    const calculateOCEANTrait = (
+        dimension: string,
+        questionIds: number[],
+        invert: boolean = false
+    ): DimensionScore => {
+        let score = 0;
+        getQuestionsForSubsection("personality", "test"); // just for typing
+        questionIds.forEach((id) => {
+            if (answers[id] !== undefined) {
+                // Likert is 1-5. Inverted: 6 - answer.
+                score += invert ? (6 - answers[id]) : answers[id];
+            }
+        });
+        const maxScore = questionIds.length * 5;
+        const percentage = maxScore > 0 ? (score / maxScore) * 100 : 0;
+        
         return {
-            name: dimensionNames[dimension],
+            name: dimensionNames[dimension] || dimension,
             score,
             maxScore,
             percentage,
             band: getScoreBand(percentage),
         };
-    });
+    };
+
+    return [
+        calculateOCEANTrait("openness", [46, 47, 48, 52, 53, 54]), // Adaptability + Risk Taking
+        calculateOCEANTrait("conscientiousness", [58, 59, 60]), // Conscientiousness
+        calculateOCEANTrait("extraversion", [43, 44, 45]), // Extroversion
+        calculateOCEANTrait("agreeableness", [13, 14, 15, 16]), // Social
+        calculateOCEANTrait("neuroticism", [49, 50, 51], true), // Emotional Stability Inverted
+    ];
 };
 
 /**
@@ -200,9 +217,9 @@ export const calculateAssessmentResults = (
     // Calculate personality scores
     const personalityScores = calculatePersonalityScores(answers);
 
-    // Calculate section-level scores for grit and lifestyle
-    const gritData = calculateSectionScore("grit", answers);
-    const lifestyleData = calculateSectionScore("lifestyle", answers);
+    // Calculate section-level scores for grit and lifestyle mapped to Motivation and Study Style
+    const gritData = calculateSectionScore("motivation", answers);
+    const lifestyleData = calculateSectionScore("studyStyle", answers);
 
     const gritScore: DimensionScore = {
         name: "GRIT & Perseverance",
@@ -232,10 +249,10 @@ export const calculateAssessmentResults = (
             case "personality":
                 dimensions = personalityScores;
                 break;
-            case "grit":
+            case "motivation":
                 dimensions = [gritScore];
                 break;
-            case "lifestyle":
+            case "studyStyle":
                 dimensions = [lifestyleScore];
                 break;
             default:
