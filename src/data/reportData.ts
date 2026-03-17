@@ -26,7 +26,6 @@ export interface ReportData {
   coreMetrics: CoreMetric[];
   aptitudeMetrics: DimensionScore[];
   interestAreas: InterestArea[];
-  environmentInsights: DimensionScore[];
   readinessScore: number;
   topStrengths: string[];
   growthAreas: string[];
@@ -76,14 +75,6 @@ export const sampleReportData: ReportData = {
     { name: "Spatial Reasoning", score: 65, maxScore: 100, percentage: 65, band: "moderate" },
     { name: "Memory retention", score: 70, maxScore: 100, percentage: 70, band: "moderate" },
     { name: "Problem-solving", score: 82, maxScore: 100, percentage: 82, band: "high" },
-  ],
-  environmentInsights: [
-    { name: "Family Support", score: 90, maxScore: 100, percentage: 90, band: "high" },
-    { name: "Financial Stability", score: 75, maxScore: 100, percentage: 75, band: "high" },
-    { name: "Willingness to Relocate", score: 80, maxScore: 100, percentage: 80, band: "high" },
-    { name: "Ready for Long-term prep", score: 70, maxScore: 100, percentage: 70, band: "moderate" },
-    { name: "Access to Resources", score: 85, maxScore: 100, percentage: 85, band: "high" },
-    { name: "Home Focus Area", score: 75, maxScore: 100, percentage: 75, band: "high" },
   ],
 };
 
@@ -147,8 +138,7 @@ export const transformResultsToReportData = (results: AssessmentResults, student
   }));
 
   const aptitudeMetrics = results.aptitudeScores;
-  const environmentInsights = results.environmentScores;
-
+  
   // Simple readiness score average of GRIT + Lifestyle
   let rScore = 0;
   if (results.gritScore && results.lifestyleScore) {
@@ -182,7 +172,6 @@ export const transformResultsToReportData = (results: AssessmentResults, student
     coreMetrics,
     aptitudeMetrics,
     interestAreas,
-    environmentInsights,
     readinessScore,
     topStrengths: topStrengths.slice(0, 5),
     growthAreas: growthAreas.slice(0, 3),

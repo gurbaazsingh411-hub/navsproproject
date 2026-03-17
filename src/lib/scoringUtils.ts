@@ -34,7 +34,6 @@ export interface AssessmentResults {
     topInterests: DimensionScore[];
     personalitySummary: DimensionScore[];
     aptitudeScores: DimensionScore[];
-    environmentScores: DimensionScore[];
     gritScore?: DimensionScore;
     lifestyleScore?: DimensionScore;
 }
@@ -231,46 +230,6 @@ export const calculateAptitudeScores = (
 };
 
 /**
- * Calculate Environment Assessment scores
- */
-export const calculateEnvironmentScores = (
-    answers: Record<number, number>
-): DimensionScore[] => {
-    const environmentSubsections = [
-        "familySupport",
-        "financial",
-        "mobility",
-        "preparation",
-        "resources",
-        "homeEnvironment",
-    ];
-
-    const nameMap: Record<string, string> = {
-        familySupport: "Family Support",
-        financial: "Financial Stability",
-        mobility: "Willingness to Relocate",
-        preparation: "Ready for Long-term prep",
-        resources: "Access to Resources",
-        homeEnvironment: "Home Focus Area",
-    };
-
-    return environmentSubsections.map((sub) => {
-        const questions = getQuestionsForSubsection("environment", sub);
-        const questionIds = questions.map((q) => q.id);
-        const { score, maxScore } = calculateScore(questionIds, answers);
-        const percentage = maxScore > 0 ? (score / maxScore) * 100 : 0;
-
-        return {
-            name: nameMap[sub] || sub,
-            score,
-            maxScore,
-            percentage,
-            band: getScoreBand(percentage),
-        };
-    });
-};
-
-/**
  * Calculate section aggregate score
  */
 export const calculateSectionScore = (
@@ -302,9 +261,6 @@ export const calculateAssessmentResults = (
 
     // Calculate aptitude scores
     const aptitudeScores = calculateAptitudeScores(answers);
-
-    // Calculate environment scores
-    const environmentScores = calculateEnvironmentScores(answers);
 
     // Calculate section-level scores for grit and lifestyle mapped to Motivation and Study Style
     const gritData = calculateSectionScore("motivation", answers);
@@ -341,9 +297,6 @@ export const calculateAssessmentResults = (
             case "aptitude":
                 dimensions = aptitudeScores;
                 break;
-            case "environment":
-                dimensions = environmentScores;
-                break;
             case "motivation":
                 dimensions = [gritScore];
                 break;
@@ -369,7 +322,6 @@ export const calculateAssessmentResults = (
         topInterests,
         personalitySummary: personalityScores,
         aptitudeScores,
-        environmentScores,
         gritScore,
         lifestyleScore,
     };
