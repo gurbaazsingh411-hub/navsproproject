@@ -24,7 +24,9 @@ export interface ReportData {
   assessmentDate: string;
   personalityTraits: PersonalityTrait[];
   coreMetrics: CoreMetric[];
+  aptitudeMetrics: DimensionScore[];
   interestAreas: InterestArea[];
+  environmentInsights: DimensionScore[];
   readinessScore: number;
   topStrengths: string[];
   growthAreas: string[];
@@ -66,6 +68,22 @@ export const sampleReportData: ReportData = {
     "Technology & Engineering",
     "Business Analytics",
     "Research & Development",
+  ],
+  aptitudeMetrics: [
+    { name: "Logical Reasoning", score: 85, maxScore: 100, percentage: 85, band: "high" },
+    { name: "Numerical Ability", score: 78, maxScore: 100, percentage: 78, band: "high" },
+    { name: "Verbal Ability", score: 72, maxScore: 100, percentage: 72, band: "high" },
+    { name: "Spatial Reasoning", score: 65, maxScore: 100, percentage: 65, band: "moderate" },
+    { name: "Memory retention", score: 70, maxScore: 100, percentage: 70, band: "moderate" },
+    { name: "Problem-solving", score: 82, maxScore: 100, percentage: 82, band: "high" },
+  ],
+  environmentInsights: [
+    { name: "Family Support", score: 90, maxScore: 100, percentage: 90, band: "high" },
+    { name: "Financial Stability", score: 75, maxScore: 100, percentage: 75, band: "high" },
+    { name: "Willingness to Relocate", score: 80, maxScore: 100, percentage: 80, band: "high" },
+    { name: "Ready for Long-term prep", score: 70, maxScore: 100, percentage: 70, band: "moderate" },
+    { name: "Access to Resources", score: 85, maxScore: 100, percentage: 85, band: "high" },
+    { name: "Home Focus Area", score: 75, maxScore: 100, percentage: 75, band: "high" },
   ],
 };
 
@@ -128,6 +146,9 @@ export const transformResultsToReportData = (results: AssessmentResults, student
     careers: CAREER_MAPPINGS[i.name] || []
   }));
 
+  const aptitudeMetrics = results.aptitudeScores;
+  const environmentInsights = results.environmentScores;
+
   // Simple readiness score average of GRIT + Lifestyle
   let rScore = 0;
   if (results.gritScore && results.lifestyleScore) {
@@ -159,7 +180,9 @@ export const transformResultsToReportData = (results: AssessmentResults, student
     assessmentDate: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
     personalityTraits,
     coreMetrics,
+    aptitudeMetrics,
     interestAreas,
+    environmentInsights,
     readinessScore,
     topStrengths: topStrengths.slice(0, 5),
     growthAreas: growthAreas.slice(0, 3),

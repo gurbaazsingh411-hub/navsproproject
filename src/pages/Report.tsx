@@ -9,6 +9,8 @@ import { ReadinessRing } from "@/components/report/ReadinessRing";
 import { InterestCards } from "@/components/report/InterestCards";
 import { InsightsSummary } from "@/components/report/InsightsSummary";
 import { ReportExplanation } from "@/components/report/ReportExplanation";
+import { AptitudeBreakdown } from "@/components/report/AptitudeBreakdown";
+import { EnvironmentInsights } from "@/components/report/EnvironmentInsights";
 import { sampleReportData } from "@/data/reportData";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
@@ -210,6 +212,12 @@ const Report = () => {
           <div className="grid lg:grid-cols-2 gap-6 mb-10">
             <ReadinessRing score={data.readinessScore} />
             <InterestCards interests={data.interestAreas} />
+          </div>
+
+          {/* Aptitude and Environment Breakdown */}
+          <div className="grid lg:grid-cols-2 gap-6 mb-10">
+            <AptitudeBreakdown metrics={data.aptitudeMetrics} />
+            <EnvironmentInsights insights={data.environmentInsights} />
           </div>
 
           {/* Summary section */}
