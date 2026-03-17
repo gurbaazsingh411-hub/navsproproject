@@ -160,7 +160,7 @@ const Report = () => {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mb-10"
+            className="mb-8"
           >
             <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-6">
               <div>
@@ -186,19 +186,8 @@ const Report = () => {
               </div>
             </div>
 
-            {/* Introduction card */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              className="p-6 rounded-2xl bg-gradient-to-br from-primary/5 via-secondary/5 to-accent/5 border border-border"
-            >
-              <p className="text-foreground leading-relaxed">
-                This report is a snapshot of who you are today—your unique combination of personality traits,
-                natural abilities, and interests. Think of it as a compass, not a destination.
-                Use these insights to explore paths that align with your authentic self.
-              </p>
-            </motion.div>
+            {/* Detailed Explanation at Top */}
+            <ReportExplanation />
           </motion.div>
 
           {/* Charts grid */}
@@ -237,8 +226,6 @@ const Report = () => {
               recommendedPaths={data.recommendedPaths}
             />
           </motion.div>
-
-          <ReportExplanation />
 
           {/* CTA Section - Hide in PDF if possible, or keep it depending on requirement. Keeping it for now. */}
           <motion.div
