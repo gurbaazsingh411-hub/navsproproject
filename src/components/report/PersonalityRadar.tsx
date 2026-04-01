@@ -15,7 +15,7 @@ interface PersonalityRadarProps {
 
 export const PersonalityRadar = ({ traits }: PersonalityRadarProps) => {
   const data = traits.map((t) => ({
-    trait: t.trait,
+    trait: t.trait === "Conscientiousness" || t.trait === "Conscientious" ? "Conscientious" : t.trait,
     value: t.score,
     fullMark: 100,
   }));
@@ -82,7 +82,7 @@ export const PersonalityRadar = ({ traits }: PersonalityRadarProps) => {
           >
             <div className="w-2 h-2 rounded-full bg-primary mt-2 shrink-0" />
             <div>
-              <p className="text-sm font-medium text-foreground">{trait.trait}: {trait.score}%</p>
+              <p className="text-sm font-medium text-foreground">{trait.trait === "Conscientiousness" || trait.trait === "Conscientious" ? "Conscientious" : trait.trait}: {trait.score}%</p>
               <p className="text-xs text-muted-foreground">{trait.description}</p>
             </div>
           </motion.div>
