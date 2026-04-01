@@ -79,7 +79,8 @@ const Report = () => {
         scale: 2, // Higher scale for better quality
         useCORS: true, // For cross-origin images
         logging: false,
-        backgroundColor: "#ffffff" // Ensure white background
+        backgroundColor: "#ffffff", // Ensure white background
+        windowWidth: 1200 // Force desktop width for PDF rendering so media queries act like desktop
       });
 
       const imgData = canvas.toDataURL("image/png");
