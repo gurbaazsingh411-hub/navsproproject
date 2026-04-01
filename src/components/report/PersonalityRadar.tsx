@@ -41,8 +41,8 @@ export const PersonalityRadar = ({ traits }: PersonalityRadarProps) => {
         <ResponsiveContainer width="100%" height="100%">
           <RadarChart 
             data={data} 
-            margin={{ top: 20, right: 50, bottom: 20, left: 50 }}
-            outerRadius="60%"
+            margin={{ top: 10, right: 70, bottom: 10, left: 70 }}
+            outerRadius="55%"
           >
             <PolarGrid 
               stroke="hsl(var(--border))" 
@@ -50,12 +50,12 @@ export const PersonalityRadar = ({ traits }: PersonalityRadarProps) => {
             />
             <PolarAngleAxis 
               dataKey="trait" 
-              tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }}
+              tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }}
             />
             <PolarRadiusAxis 
-              angle={30} 
+              angle={90} 
               domain={[0, 100]} 
-              tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }}
+              tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 9 }}
               tickCount={5}
             />
             <Radar
