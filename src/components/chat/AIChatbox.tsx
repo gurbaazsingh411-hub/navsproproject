@@ -1,9 +1,10 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { MessageCircle, X, Send, Bot, User } from "lucide-react";
+import { MessageCircle, X, Send, Bot, Settings, Key } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { toast } from "sonner";
 
 interface Message {
   id: string;
@@ -12,21 +13,16 @@ interface Message {
   timestamp: Date;
 }
 
-// Basic hardcoded FAQ mapping for the bot
-const botResponses = [
-  { keywords: ["price", "cost", "fee", "pay"], response: "The premium assessment costs ₹50,000. You can pay securely via Razorpay in the dashboard." },
-  { keywords: ["assessment", "test", "questions"], response: "Our assessment contains a series of scientifically backed questions designed to evaluate your strengths, personality, and ideal career paths." },
-  { keywords: ["referral", "code", "executive"], response: "If you have a referral code from a sales executive, you can enter it during sign-up to ensure they get credit!" },
-  { keywords: ["login", "sign in", "account"], response: "You can sign up or log in using the buttons in the top right corner. Make sure to verify your email!" },
-  { keywords: ["hello", "hi", "hey"], response: "Hello! I'm the NAVSPRO assistant. How can I help you today?" },
-];
-
 export const AIChatbox = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [apiKey, setApiKey] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "1",
-      text: "Hi! I'm the NAVSPRO Assistant. Have any questions about the platform?",
+      text: "Hi! I'm the AI Assistant. Please set your Free Google Gemini API key in settings to start chatting!",
       sender: "bot",
       timestamp: new Date(),
     },
@@ -34,14 +30,46 @@ export const AIChatbox = () => {
   const [inputValue, setInputValue] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // Load API key from local storage on mount
+  useEffect(() => {
+    const savedKey = localStorage.getItem("gemini_api_key");
+    if (savedKey) {
+      setApiKey(savedKey);
+      setMessages([
+        {
+          id: "1",
+          text: "Hi! I'm the NAVSPRO Assistant. How can I help you today?",
+          sender: "bot",
+          timestamp: new Date(),
+        }
+      ]);
+    }
+  }, []);
+
   // Auto-scroll to bottom of messages
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, isOpen]);
+  }, [messages, isOpen, showSettings]);
 
-  const handleSendMessage = (e: React.FormEvent) => {
+  const saveApiKey = () => {
+    if (apiKey.trim().length < 20) {
+      toast.error("Please enter a valid Gemini API key");
+      return;
+    }
+    localStorage.setItem("gemini_api_key", apiKey.trim());
+    toast.success("API Key saved securely in your browser!");
+    setShowSettings(false);
+  };
+
+  const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputValue.trim()) return;
+
+    if (!apiKey) {
+      toast.error("Please configure your Gemini API Key first.");
+      setShowSettings(true);
+      return;
+    }
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -52,18 +80,37 @@ export const AIChatbox = () => {
 
     setMessages((prev) => [...prev, userMessage]);
     setInputValue("");
+    setIsLoading(true);
 
-    // Simulate bot thinking
-    setTimeout(() => {
-      let botText = "I'm still learning! If you have a complex query, please contact our support team.";
+    try {
+      // Prepare chat history for Gemini
+      const apiMessages = messages.filter(m => m.id !== "1").map((msg) => ({
+        role: msg.sender === "user" ? "user" : "model",
+        parts: [{ text: msg.text }],
+      }));
       
-      const lowerQuery = userMessage.text.toLowerCase();
-      for (const entry of botResponses) {
-        if (entry.keywords.some((kw) => lowerQuery.includes(kw))) {
-          botText = entry.response;
-          break;
-        }
+      apiMessages.push({ role: "user", parts: [{ text: userMessage.text }] });
+
+      // Call Google Gemini API
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          systemInstruction: {
+            parts: [{ text: "You are a helpful assistant for NAVSPRO, a career assessment platform." }]
+          },
+          contents: apiMessages,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to communicate with Gemini API. Check your API key.");
       }
+
+      const data = await response.json();
+      const botText = data.candidates?.[0]?.content?.parts?.[0]?.text || "I'm sorry, I couldn't understand that.";
 
       const botMessage: Message = {
         id: (Date.now() + 1).toString(),
@@ -71,8 +118,22 @@ export const AIChatbox = () => {
         sender: "bot",
         timestamp: new Date(),
       };
+      
       setMessages((prev) => [...prev, botMessage]);
-    }, 600);
+    } catch (error: any) {
+      toast.error(error.message || "An error occurred.");
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: (Date.now() + 1).toString(),
+          text: "Oops! Something went wrong. Please check your API key or try again later.",
+          sender: "bot",
+          timestamp: new Date(),
+        },
+      ]);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -113,59 +174,110 @@ export const AIChatbox = () => {
                     <p className="text-xs text-muted-foreground">Always here to help</p>
                   </div>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setIsOpen(false)}
-                  className="rounded-full w-8 h-8 hover:bg-black/5"
-                >
-                  <X className="w-5 h-5" />
-                </Button>
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setShowSettings(!showSettings)}
+                    className="rounded-full w-8 h-8 hover:bg-black/5"
+                  >
+                    <Settings className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setIsOpen(false)}
+                    className="rounded-full w-8 h-8 hover:bg-black/5"
+                  >
+                    <X className="w-5 h-5" />
+                  </Button>
+                </div>
               </CardHeader>
 
-              <CardContent className="flex-1 p-4 overflow-y-auto space-y-4">
-                {messages.map((msg) => (
-                  <div
-                    key={msg.id}
-                    className={`flex ${msg.sender === "user" ? "justify-end" : "justify-start"} gap-2`}
-                  >
-                    {msg.sender === "bot" && (
-                      <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center shrink-0 mt-1">
-                        <Bot className="w-3 h-3 text-primary" />
+              {showSettings ? (
+                <CardContent className="flex-1 p-6 overflow-y-auto space-y-4">
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2 text-primary">
+                      <Key className="w-5 h-5" />
+                      <h3 className="font-semibold text-lg">API Configuration</h3>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Get a free API key from <strong>Google AI Studio</strong>. The free tier gives you 1,500 requests per day at no cost!
+                    </p>
+                    <div className="space-y-2">
+                      <Input
+                        type="password"
+                        placeholder="AIzaSy..."
+                        value={apiKey}
+                        onChange={(e) => setApiKey(e.target.value)}
+                        className="font-mono text-sm"
+                      />
+                    </div>
+                    <Button onClick={saveApiKey} className="w-full">
+                      Save Key & Start Chatting
+                    </Button>
+                  </div>
+                </CardContent>
+              ) : (
+                <>
+                  <CardContent className="flex-1 p-4 overflow-y-auto space-y-4">
+                    {messages.map((msg) => (
+                      <div
+                        key={msg.id}
+                        className={`flex ${msg.sender === "user" ? "justify-end" : "justify-start"} gap-2`}
+                      >
+                        {msg.sender === "bot" && (
+                          <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center shrink-0 mt-1">
+                            <Bot className="w-3 h-3 text-primary" />
+                          </div>
+                        )}
+                        <div
+                          className={`px-3 py-2 rounded-2xl max-w-[80%] text-sm ${
+                            msg.sender === "user"
+                              ? "bg-primary text-primary-foreground rounded-tr-sm"
+                              : "bg-muted text-foreground rounded-tl-sm"
+                          }`}
+                        >
+                          {msg.text}
+                        </div>
+                      </div>
+                    ))}
+                    {isLoading && (
+                      <div className="flex justify-start gap-2">
+                        <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center shrink-0 mt-1">
+                          <Bot className="w-3 h-3 text-primary" />
+                        </div>
+                        <div className="px-3 py-2 rounded-2xl bg-muted text-foreground rounded-tl-sm text-sm flex gap-1 items-center">
+                          <span className="w-1.5 h-1.5 bg-foreground/50 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                          <span className="w-1.5 h-1.5 bg-foreground/50 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                          <span className="w-1.5 h-1.5 bg-foreground/50 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                        </div>
                       </div>
                     )}
-                    <div
-                      className={`px-3 py-2 rounded-2xl max-w-[80%] text-sm ${
-                        msg.sender === "user"
-                          ? "bg-primary text-primary-foreground rounded-tr-sm"
-                          : "bg-muted text-foreground rounded-tl-sm"
-                      }`}
-                    >
-                      {msg.text}
-                    </div>
-                  </div>
-                ))}
-                <div ref={messagesEndRef} />
-              </CardContent>
+                    <div ref={messagesEndRef} />
+                  </CardContent>
 
-              <div className="p-3 border-t bg-background">
-                <form onSubmit={handleSendMessage} className="flex gap-2">
-                  <Input
-                    placeholder="Ask a question..."
-                    value={inputValue}
-                    onChange={(e) => setInputValue(e.target.value)}
-                    className="flex-1 rounded-full border-muted-foreground/20 focus-visible:ring-primary/50"
-                  />
-                  <Button
-                    type="submit"
-                    size="icon"
-                    className="rounded-full shrink-0"
-                    disabled={!inputValue.trim()}
-                  >
-                    <Send className="w-4 h-4" />
-                  </Button>
-                </form>
-              </div>
+                  <div className="p-3 border-t bg-background">
+                    <form onSubmit={handleSendMessage} className="flex gap-2">
+                      <Input
+                        placeholder={apiKey ? "Ask a question..." : "Please configure API Key first..."}
+                        value={inputValue}
+                        onChange={(e) => setInputValue(e.target.value)}
+                        disabled={isLoading || !apiKey}
+                        className="flex-1 rounded-full border-muted-foreground/20 focus-visible:ring-primary/50"
+                      />
+                      <Button
+                        type="submit"
+                        size="icon"
+                        className="rounded-full shrink-0"
+                        disabled={!inputValue.trim() || isLoading || !apiKey}
+                      >
+                        <Send className="w-4 h-4" />
+                      </Button>
+                    </form>
+                  </div>
+                </>
+              )}
             </Card>
           </motion.div>
         )}
