@@ -42,7 +42,7 @@ export const handler: Handler = async (event, context) => {
             // Update user profile to mark as premium
             const { error: dbError } = await supabase
                 .from('profiles')
-                .update({ is_premium: true })
+                .update({ has_paid: true })
                 .eq('id', userId);
 
             if (dbError) {

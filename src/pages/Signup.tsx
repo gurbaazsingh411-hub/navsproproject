@@ -19,6 +19,7 @@ const Signup = () => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [referralCode, setReferralCode] = useState("");
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [loading, setLoading] = useState(false);
   const [verificationSent, setVerificationSent] = useState(false);
@@ -80,6 +81,7 @@ const Signup = () => {
           id: supabaseUserId,
           full_name: name,
           email: email,
+          referred_by: referralCode ? referralCode.toUpperCase().trim() : null,
           updated_at: new Date().toISOString(),
         });
       }
@@ -231,6 +233,21 @@ const Signup = () => {
                       onChange={(e) => setEmail(e.target.value)}
                       className="pl-10"
                       required
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="referralCode">Referral Code (Optional)</Label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="referralCode"
+                      type="text"
+                      placeholder="Enter sales executive code"
+                      value={referralCode}
+                      onChange={(e) => setReferralCode(e.target.value)}
+                      className="pl-10 uppercase"
                     />
                   </div>
                 </div>

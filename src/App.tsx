@@ -15,6 +15,8 @@ import Signup from "./pages/Signup";
 import ForgotPassword from "./pages/ForgotPassword";
 import VerifyEmail from "./pages/VerifyEmail";
 import NotFound from "./pages/NotFound";
+import AdminDashboard from "./pages/AdminDashboard";
+import { AIChatbox } from "@/components/chat/AIChatbox";
 
 import { AuthProvider } from "@/context/AuthContext";
 
@@ -45,9 +47,11 @@ const App = () => (
               <Route path="/settings" element={<SettingsPage />} />
             </Route>
 
+            <Route path="/admin" element={<AdminDashboard />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
+          <AIChatbox />
         </BrowserRouter>
       </AuthProvider>
     </TooltipProvider>
