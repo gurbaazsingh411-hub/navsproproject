@@ -1,10 +1,12 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Users, CreditCard, UserPlus, TrendingUp } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/context/AuthContext";
 
 interface Profile {
   id: string;
@@ -15,13 +17,23 @@ interface Profile {
   created_at: string;
 }
 
+const ADMIN_EMAIL = "gurbaazsingh411@gmail.com";
+
 export default function AdminDashboard() {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
+  const { user, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    if (!authLoading) {
+      if (!user || user.email !== ADMIN_EMAIL) {
+        navigate("/");
+      } else {
+        fetchData();
+      }
+    }
+  }, [user, authLoading, navigate]);
 
   const fetchData = async () => {
     setLoading(true);
