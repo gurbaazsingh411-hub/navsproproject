@@ -30,3 +30,4 @@ CREATE POLICY "Users can insert their own assessment"
 CREATE POLICY "Users can update their own assessment"
   ON public.assessments FOR UPDATE
   USING ( auth.uid() = user_id );
+  

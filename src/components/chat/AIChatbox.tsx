@@ -92,13 +92,13 @@ export const AIChatbox = () => {
       apiMessages.push({ role: "user", parts: [{ text: userMessage.text }] });
 
       // Call Google Gemini API
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          systemInstruction: {
+          system_instruction: {
             parts: [{ text: "You are a helpful assistant for NAVSPRO, a career assessment platform." }]
           },
           contents: apiMessages,

@@ -6,6 +6,8 @@ import { supabase } from "@/lib/supabase";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
 
 interface Profile {
@@ -21,6 +23,9 @@ const ADMIN_EMAIL = "gurbaazsingh411@gmail.com";
 
 export default function AdminDashboard() {
   const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [validCodes, setValidCodes] = useState<{code: string, created_at: string}[]>([]);
+  const [newCode, setNewCode] = useState("");
+  const [creatingCode, setCreatingCode] = useState(false);
   const [loading, setLoading] = useState(true);
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
@@ -38,15 +43,47 @@ export default function AdminDashboard() {
   const fetchData = async () => {
     setLoading(true);
     // Fetch all profiles
-    const { data, error } = await supabase
+    const { data: profileData, error: profileError } = await supabase
       .from("profiles")
       .select("id, full_name, email, referred_by, has_paid")
       .order("full_name", { ascending: true });
 
-    if (!error && data) {
-      setProfiles(data as Profile[]);
+    if (!profileError && profileData) {
+      setProfiles(profileData as Profile[]);
     }
+
+    // Fetch valid referral codes
+    const { data: codeData, error: codeError } = await supabase
+      .from("referral_codes")
+      .select("code, created_at")
+      .order("created_at", { ascending: false });
+
+    if (!codeError && codeData) {
+      setValidCodes(codeData);
+    }
+
     setLoading(false);
+  };
+
+  const handleCreateCode = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newCode.trim()) return;
+    setCreatingCode(true);
+
+    const formattedCode = newCode.toUpperCase().trim();
+    
+    const { error } = await supabase
+      .from("referral_codes")
+      .insert({ code: formattedCode });
+      
+    if (error) {
+      toast.error(error.message || "Failed to create code");
+    } else {
+      toast.success("Referral code created successfully!");
+      setNewCode("");
+      fetchData();
+    }
+    setCreatingCode(false);
   };
 
   const totalUsers = profiles.length;
@@ -55,6 +92,12 @@ export default function AdminDashboard() {
 
   // Group by referral code
   const referralStats: Record<string, { signups: number; paid: number }> = {};
+  
+  // Initialize with all valid codes from DB
+  validCodes.forEach(vc => {
+    referralStats[vc.code] = { signups: 0, paid: 0 };
+  });
+
   profiles.forEach((p) => {
     const code = p.referred_by || "Organic (No Code)";
     if (!referralStats[code]) {
@@ -132,6 +175,21 @@ export default function AdminDashboard() {
               </CardTitle>
             </CardHeader>
             <CardContent>
+              <div className="mb-6 p-4 border rounded-lg bg-muted/30">
+                <h3 className="text-sm font-semibold mb-3">Create New Referral Code</h3>
+                <form onSubmit={handleCreateCode} className="flex gap-2">
+                  <Input
+                    placeholder="Enter new code (e.g., SUMMER2026)"
+                    value={newCode}
+                    onChange={(e) => setNewCode(e.target.value)}
+                    className="uppercase"
+                  />
+                  <Button type="submit" disabled={creatingCode || !newCode.trim()}>
+                    {creatingCode ? "Adding..." : "Add Code"}
+                  </Button>
+                </form>
+              </div>
+
               <Table>
                 <TableHeader>
                   <TableRow>
