@@ -87,7 +87,7 @@ export function ProfileForm({ onComplete, initialData }: ProfileFormProps) {
                                 <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                                 <Input
                                     id="full_name"
-                                    value={formData.full_name}
+                                    value={formData.full_name || ""}
                                     onChange={e => setFormData({ ...formData, full_name: e.target.value })}
                                     placeholder="John Doe"
                                     className="pl-9"
@@ -102,7 +102,7 @@ export function ProfileForm({ onComplete, initialData }: ProfileFormProps) {
                                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                                 <Input
                                     id="email"
-                                    value={formData.email}
+                                    value={formData.email || ""}
                                     disabled
                                     className="pl-9 bg-muted/50"
                                 />
@@ -115,7 +115,7 @@ export function ProfileForm({ onComplete, initialData }: ProfileFormProps) {
                                 <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                                 <Input
                                     id="phone"
-                                    value={formData.phone}
+                                    value={formData.phone || ""}
                                     onChange={e => setFormData({ ...formData, phone: e.target.value })}
                                     placeholder="+1 234 567 8900"
                                     className="pl-9"
@@ -129,7 +129,7 @@ export function ProfileForm({ onComplete, initialData }: ProfileFormProps) {
                                 <GraduationCap className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                                 <Input
                                     id="grade"
-                                    value={formData.grade}
+                                    value={formData.grade || ""}
                                     onChange={e => setFormData({ ...formData, grade: e.target.value })}
                                     placeholder="10th Grade"
                                     className="pl-9"
@@ -143,7 +143,7 @@ export function ProfileForm({ onComplete, initialData }: ProfileFormProps) {
                                 <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                                 <Input
                                     id="city_state"
-                                    value={formData.city_state}
+                                    value={formData.city_state || ""}
                                     onChange={e => setFormData({ ...formData, city_state: e.target.value })}
                                     placeholder="New York, NY"
                                     className="pl-9"

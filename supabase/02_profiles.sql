@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
 -- Safely add the new columns if they do not already exist (so old data is preserved)
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS referred_by TEXT;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS has_paid BOOLEAN DEFAULT FALSE;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS roadmap_data JSONB;
 
 -- Enable RLS
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;

@@ -3,13 +3,7 @@ import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Download, Calendar, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { PersonalityRadar } from "@/components/report/PersonalityRadar";
-import { AptitudeChart } from "@/components/report/AptitudeChart";
-import { ReadinessRing } from "@/components/report/ReadinessRing";
-import { InterestCards } from "@/components/report/InterestCards";
-import { InsightsSummary } from "@/components/report/InsightsSummary";
-import { ReportExplanation } from "@/components/report/ReportExplanation";
-import { AptitudeBreakdown } from "@/components/report/AptitudeBreakdown";
+import { ReportDisplay } from "@/components/report/ReportDisplay";
 import { sampleReportData } from "@/data/reportData";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
@@ -156,110 +150,9 @@ const Report = () => {
 
       {/* Main content - Wrapped in ref for capture */}
       <div ref={reportRef} className="bg-background">
-        <main className="container mx-auto px-4 py-8 max-w-6xl">
-          {/* Report header */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mb-8"
-          >
-            <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-6">
-              <div>
-                <motion.div
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.1 }}
-                  className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium mb-3"
-                >
-                  <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-                  Personal Insights Report
-                </motion.div>
-                <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">
-                  Hello, {data.studentName}
-                </h1>
-                <p className="text-muted-foreground">
-                  Your personalized career discovery insights
-                </p>
-              </div>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Calendar className="w-4 h-4" />
-                {data.assessmentDate}
-              </div>
-            </div>
-
-            {/* Detailed Explanation at Top */}
-            <ReportExplanation />
-          </motion.div>
-
-          {/* Charts grid */}
-          <div className="grid lg:grid-cols-2 gap-6 mb-10">
-            <PersonalityRadar traits={data.personalityTraits} />
-            <AptitudeChart areas={data.coreMetrics} />
-          </div>
-
-          {/* Readiness and Interests */}
-          <div className="grid lg:grid-cols-2 gap-6 mb-10">
-            <ReadinessRing score={data.readinessScore} />
-            <InterestCards interests={data.interestAreas} />
-          </div>
-
-          {/* Aptitude Breakdown */}
-          <div className="mb-10">
-            <AptitudeBreakdown metrics={data.aptitudeMetrics} />
-          </div>
-
-          {/* Summary section */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.6 }}
-            className="mb-10"
-          >
-            <h2 className="text-xl font-semibold text-foreground mb-6 flex items-center gap-2">
-              <span className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center text-lg">
-                ✨
-              </span>
-              What This Means For You
-            </h2>
-            <InsightsSummary
-              strengths={data.topStrengths}
-              growthAreas={data.growthAreas}
-              recommendedPaths={data.recommendedPaths}
-            />
-          </motion.div>
-
-          {/* CTA Section - Hide in PDF if possible, or keep it depending on requirement. Keeping it for now. */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 1 }}
-            className="text-center py-12 px-6 rounded-2xl bg-gradient-to-br from-primary/10 via-secondary/5 to-background border border-border print:hidden" // Added print:hidden logic if needed later
-          >
-            <h3 className="text-2xl font-bold text-foreground mb-3">
-              Ready to Take the Next Step?
-            </h3>
-            <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-              Connect with a mentor who can help you explore these paths and create an actionable plan.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center" data-html2canvas-ignore="true">
-              <PaymentButton amount={50000} description="Premium Career Assessment & Mentorship" />
-              <Button variant="outline" size="lg">
-                Explore Career Paths
-              </Button>
-            </div>
-          </motion.div>
-
-          {/* Disclaimer */}
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 1.2 }}
-            className="text-center text-xs text-muted-foreground mt-8"
-          >
-            This report is a guide for self-discovery, not a definitive assessment.
-            Your potential is unlimited, and this is just the beginning of your journey.
-          </motion.p>
-        </main>
+        <div className="px-4">
+          <ReportDisplay data={data} />
+        </div>
       </div>
     </div>
   );

@@ -9,6 +9,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { RoadmapDisplay, RoadmapData } from "@/components/roadmap/RoadmapDisplay";
+import { ReportDisplay } from "@/components/report/ReportDisplay";
+import { calculateAssessmentResults } from "@/lib/scoringUtils";
+import { transformResultsToReportData } from "@/data/reportData";
 
 interface Profile {
   id: string;
@@ -17,6 +22,7 @@ interface Profile {
   referred_by: string | null;
   has_paid: boolean;
   created_at: string;
+  roadmap_data?: RoadmapData | null;
 }
 
 const ADMIN_EMAIL = "gurbaazsingh411@gmail.com";
@@ -27,6 +33,8 @@ export default function AdminDashboard() {
   const [newCode, setNewCode] = useState("");
   const [creatingCode, setCreatingCode] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [selectedProfile, setSelectedProfile] = useState<Profile | null>(null);
+  const [assessments, setAssessments] = useState<Record<string, any>>({});
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
 
@@ -45,11 +53,25 @@ export default function AdminDashboard() {
     // Fetch all profiles
     const { data: profileData, error: profileError } = await supabase
       .from("profiles")
-      .select("id, full_name, email, referred_by, has_paid")
+      .select("id, full_name, email, referred_by, has_paid, roadmap_data")
       .order("full_name", { ascending: true });
 
     if (!profileError && profileData) {
       setProfiles(profileData as Profile[]);
+    }
+
+    const { data: assessmentData } = await supabase
+      .from("assessments")
+      .select("user_id, answers");
+      
+    if (assessmentData) {
+      const astMap: Record<string, any> = {};
+      assessmentData.forEach((ast) => {
+        if (ast.answers) {
+          astMap[ast.user_id] = ast.answers;
+        }
+      });
+      setAssessments(astMap);
     }
 
     // Fetch valid referral codes
@@ -241,7 +263,7 @@ export default function AdminDashboard() {
                     </TableRow>
                   )}
                   {profiles.map((p) => (
-                    <TableRow key={p.id}>
+                    <TableRow key={p.id} className="cursor-pointer hover:bg-muted/50" onClick={() => setSelectedProfile(p)}>
                       <TableCell>
                         <div className="font-medium">{p.full_name || "Unknown"}</div>
                         <div className="text-xs text-muted-foreground">{p.email}</div>
@@ -265,6 +287,73 @@ export default function AdminDashboard() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Student Detail Modal */}
+        <Dialog open={!!selectedProfile} onOpenChange={(open) => !open && setSelectedProfile(null)}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>{selectedProfile?.full_name}'s Profile</DialogTitle>
+              <DialogDescription>
+                {selectedProfile?.email}
+              </DialogDescription>
+            </DialogHeader>
+            
+            {selectedProfile && (
+              <div className="space-y-6 mt-4">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="p-4 rounded-lg bg-muted/50 border">
+                    <p className="text-sm text-muted-foreground">Payment Status</p>
+                    <p className="font-semibold">{selectedProfile.has_paid ? "Paid" : "Unpaid"}</p>
+                  </div>
+                  <div className="p-4 rounded-lg bg-muted/50 border">
+                    <p className="text-sm text-muted-foreground">Referred By</p>
+                    <p className="font-semibold">{selectedProfile.referred_by || "Organic"}</p>
+                  </div>
+                  <div className="p-4 rounded-lg bg-muted/50 border">
+                    <p className="text-sm text-muted-foreground">Assessment</p>
+                    <p className="font-semibold">{Object.keys(assessments[selectedProfile.id] || {}).length} / 90 Qs</p>
+                  </div>
+                  <div className="p-4 rounded-lg bg-muted/50 border">
+                    <p className="text-sm text-muted-foreground">Progress</p>
+                    <p className="font-semibold">{Math.round(((Object.keys(assessments[selectedProfile.id] || {}).length) / 90) * 100)}%</p>
+                  </div>
+                </div>
+
+                {selectedProfile.roadmap_data ? (
+                  <div className="mt-8 border-t pt-8">
+                    <h3 className="text-xl font-semibold mb-4">Generated Roadmap</h3>
+                    <div className="scale-[0.98] origin-top bg-muted/10 rounded-lg border p-2">
+                      <RoadmapDisplay data={selectedProfile.roadmap_data} />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="mt-8 border-t pt-8 text-center text-muted-foreground">
+                    <p>No roadmap generated yet.</p>
+                  </div>
+                )}
+
+                {Object.keys(assessments[selectedProfile.id] || {}).length >= 90 ? (
+                  <div className="mt-8 border-t pt-8">
+                    <h3 className="text-xl font-semibold mb-4">Assessment Report</h3>
+                    <div className="scale-[0.98] origin-top bg-muted/10 rounded-lg border p-2 overflow-y-auto max-h-[600px]">
+                      <ReportDisplay 
+                        data={transformResultsToReportData(
+                          calculateAssessmentResults(assessments[selectedProfile.id]), 
+                          selectedProfile.full_name || "Student"
+                        )} 
+                        hideCTA={true}
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="mt-8 border-t pt-8 text-center text-muted-foreground">
+                    <p>Assessment not completed yet.</p>
+                  </div>
+                )}
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
 
       </motion.div>
     </div>
