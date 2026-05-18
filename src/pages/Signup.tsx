@@ -48,26 +48,23 @@ const Signup = () => {
       return;
     }
 
-    if (!referralCode.trim()) {
-      toast.error("A valid referral code is required to sign up.");
-      return;
-    }
-
     setLoading(true);
 
     try {
-      // ── Step 0: Validate Referral Code ───────────────────────────────────────
-      const formattedCode = referralCode.toUpperCase().trim();
-      const { data: codeData, error: codeError } = await supabase
-        .from("referral_codes")
-        .select("code")
-        .eq("code", formattedCode)
-        .single();
+      // ── Step 0: Validate Referral Code (Optional) ──────────────────────────
+      if (referralCode.trim()) {
+        const formattedCode = referralCode.toUpperCase().trim();
+        const { data: codeData, error: codeError } = await supabase
+          .from("referral_codes")
+          .select("code")
+          .eq("code", formattedCode)
+          .single();
 
-      if (codeError || !codeData) {
-        toast.error("Invalid referral code. Please check and try again.");
-        setLoading(false);
-        return;
+        if (codeError || !codeData) {
+          toast.error("Invalid referral code. Please check and try again.");
+          setLoading(false);
+          return;
+        }
       }
 
       // ── Step 1: Firebase — create account + send verification email ──────────
@@ -257,17 +254,16 @@ const Signup = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="referralCode">Referral Code</Label>
+                  <Label htmlFor="referralCode">Referral Code (Optional)</Label>
                   <div className="relative">
                     <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
                       id="referralCode"
                       type="text"
-                      placeholder="Enter sales executive code"
+                      placeholder="Enter sales executive code (optional)"
                       value={referralCode}
                       onChange={(e) => setReferralCode(e.target.value)}
                       className="pl-10 uppercase"
-                      required
                     />
                   </div>
                 </div>

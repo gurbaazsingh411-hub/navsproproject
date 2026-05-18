@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Download, Calendar, Loader2 } from "lucide-react";
+import { ArrowLeft, Download, Calendar, Loader2, BookOpen, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ReportDisplay } from "@/components/report/ReportDisplay";
 import { sampleReportData } from "@/data/reportData";
 import { toast } from "sonner";
@@ -52,6 +53,63 @@ const Report = () => {
       setIsLoading(false);
     }
   }, [user]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
+        <Loader2 className="w-8 h-8 animate-spin text-primary mb-4" />
+        <p className="text-muted-foreground font-medium">Loading your assessment results...</p>
+      </div>
+    );
+  }
+
+  if (!reportData) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4 relative">
+        {/* Background glows */}
+        <div className="fixed top-20 right-20 w-64 h-64 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
+        <div className="fixed bottom-20 left-20 w-64 h-64 rounded-full bg-secondary/10 blur-3xl pointer-events-none" />
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="w-full max-w-md relative z-10"
+        >
+          <Card className="border-0 shadow-medium">
+            <CardHeader className="text-center pb-2">
+              <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+                <BookOpen className="w-8 h-8 text-primary" />
+              </div>
+              <CardTitle className="text-2xl font-bold">Assessment Required</CardTitle>
+              <CardDescription className="text-base mt-2">
+                You haven't completed your career assessment yet. Take the assessment to unlock your AI-powered personalized career report.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4 pt-4 text-center">
+              <Button
+                variant="hero"
+                size="lg"
+                className="w-full gap-2"
+                onClick={() => navigate("/assessment")}
+              >
+                Take Career Assessment
+                <ArrowRight className="w-4 h-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                className="w-full gap-2 text-muted-foreground"
+                onClick={() => navigate("/dashboard")}
+              >
+                <ArrowLeft className="w-4 h-4" />
+                Back to Dashboard
+              </Button>
+            </CardContent>
+          </Card>
+        </motion.div>
+      </div>
+    );
+  }
 
   const defaultName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || "Student";
   const data = reportData || { ...sampleReportData, studentName: defaultName }; // Fallback to sample for dev/preview if no data found
