@@ -21,7 +21,13 @@ const ForgotPassword = () => {
     setError("");
 
     try {
-      const siteUrl = import.meta.env.VITE_SITE_URL || window.location.origin;
+      let siteUrl = import.meta.env.VITE_SITE_URL || window.location.origin;
+      if (siteUrl && !siteUrl.startsWith("http://") && !siteUrl.startsWith("https://")) {
+        siteUrl = "https://" + siteUrl;
+      }
+      if (siteUrl.endsWith("/")) {
+        siteUrl = siteUrl.slice(0, -1);
+      }
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${siteUrl}/reset-password`,
       });
