@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -25,39 +26,50 @@ const queryClient = new QueryClient();
 
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <AuthProvider>
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/signup" element={<Signup />} />
-            <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/reset-password" element={<ResetPassword />} />
-            <Route path="/verify-email" element={<VerifyEmail />} />
+const App = () => {
+  useEffect(() => {
+    const hash = window.location.hash;
+    if (hash && (hash.includes("type=invite") || hash.includes("type=recovery"))) {
+      if (window.location.pathname !== "/reset-password") {
+        window.location.href = "/reset-password" + hash;
+      }
+    }
+  }, []);
 
-            <Route element={<ProtectedRoute />}>
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/assessment" element={<Assessment />} />
-              <Route path="/report" element={<Report />} />
-              <Route path="/profile" element={<Profile />} />
-              <Route path="/goals" element={<Goals />} />
-              <Route path="/roadmap" element={<Roadmap />} />
-              <Route path="/settings" element={<SettingsPage />} />
-            </Route>
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <AuthProvider>
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/signup" element={<Signup />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
+              <Route path="/verify-email" element={<VerifyEmail />} />
 
-            <Route path="/admin" element={<AdminDashboard />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </AuthProvider>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+              <Route element={<ProtectedRoute />}>
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/assessment" element={<Assessment />} />
+                <Route path="/report" element={<Report />} />
+                <Route path="/profile" element={<Profile />} />
+                <Route path="/goals" element={<Goals />} />
+                <Route path="/roadmap" element={<Roadmap />} />
+                <Route path="/settings" element={<SettingsPage />} />
+              </Route>
+
+              <Route path="/admin" element={<AdminDashboard />} />
+              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </AuthProvider>
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
+};
 
 export default App;

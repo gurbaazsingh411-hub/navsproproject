@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, ArrowRight, X } from "lucide-react";
@@ -23,6 +23,19 @@ const Assessment = () => {
   const currentQuestion = assessmentQuestions[currentIndex];
   const progress = ((currentIndex + 1) / totalQuestions) * 100;
   const currentSection = getCurrentSection(currentIndex + 1);
+
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const latestProgressRef = useRef<{ answers: Record<number, number>; index: number; hasUnsavedChanges: boolean }>({
+    answers: {},
+    index: 0,
+    hasUnsavedChanges: false
+  });
+
+  // Sync latest answers and index to the ref
+  useEffect(() => {
+    latestProgressRef.current.answers = answers;
+    latestProgressRef.current.index = currentIndex;
+  }, [answers, currentIndex]);
 
   // Sync internal loading and handle auth redirect or data loading
   useEffect(() => {
@@ -86,11 +99,52 @@ const Assessment = () => {
         }, { onConflict: 'user_id' });
 
       if (error) throw error;
+      latestProgressRef.current.hasUnsavedChanges = false;
     } catch (error) {
       console.error("Error saving progress:", error);
       // Optional: show a small toast or indicator, but don't block user
     }
   };
+
+  const debouncedSaveProgress = (newAnswers: Record<number, number>, newIndex: number, completed: boolean = false) => {
+    latestProgressRef.current.hasUnsavedChanges = true;
+
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+
+    if (completed) {
+      saveProgress(newAnswers, newIndex, true);
+      return;
+    }
+
+    saveTimeoutRef.current = setTimeout(() => {
+      saveProgress(newAnswers, newIndex, false);
+    }, 2000); // Save after 2 seconds of inactivity
+  };
+
+  // Save on component unmount if there are unsaved changes
+  useEffect(() => {
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+      if (latestProgressRef.current.hasUnsavedChanges && user) {
+        supabase
+          .from("assessments")
+          .upsert({
+            user_id: user.id,
+            answers: latestProgressRef.current.answers,
+            current_question_index: latestProgressRef.current.index,
+            is_complete: false,
+            updated_at: new Date().toISOString(),
+          }, { onConflict: 'user_id' })
+          .then(({ error }) => {
+            if (error) console.error("Error saving on unmount:", error);
+          });
+      }
+    };
+  }, [user]);
 
   // Auto-advance after selection (with delay)
   useEffect(() => {
@@ -111,12 +165,12 @@ const Assessment = () => {
     };
     setAnswers(newAnswers);
 
-    // Save to database
-    saveProgress(newAnswers, currentIndex);
+    // Save to database (debounced)
+    debouncedSaveProgress(newAnswers, currentIndex);
 
     // Check if this was the last question
     if (currentIndex === totalQuestions - 1) {
-      saveProgress(newAnswers, currentIndex, true);
+      debouncedSaveProgress(newAnswers, currentIndex, true);
       setTimeout(() => setIsComplete(true), 600);
     }
   };
