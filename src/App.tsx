@@ -19,6 +19,7 @@ import VerifyEmail from "./pages/VerifyEmail";
 import NotFound from "./pages/NotFound";
 import AdminDashboard from "./pages/AdminDashboard";
 import Roadmap from "./pages/Roadmap";
+import InviteAccept from "./pages/InviteAccept";
 
 import { AuthProvider } from "@/context/AuthContext";
 
@@ -29,7 +30,11 @@ import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 const App = () => {
   useEffect(() => {
     const hash = window.location.hash;
-    if (hash && (hash.includes("type=invite") || hash.includes("type=recovery"))) {
+    if (hash && hash.includes("type=invite")) {
+      if (window.location.pathname !== "/invite") {
+        window.location.href = "/invite" + hash;
+      }
+    } else if (hash && hash.includes("type=recovery")) {
       if (window.location.pathname !== "/reset-password") {
         window.location.href = "/reset-password" + hash;
       }
@@ -49,6 +54,7 @@ const App = () => {
               <Route path="/signup" element={<Signup />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/reset-password" element={<ResetPassword />} />
+              <Route path="/invite" element={<InviteAccept />} />
               <Route path="/verify-email" element={<VerifyEmail />} />
 
               <Route element={<ProtectedRoute />}>
